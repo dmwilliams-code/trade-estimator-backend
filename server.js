@@ -112,13 +112,21 @@ Guidelines:
       analysis.access * 
       analysis.materialQuality;
 
+    // Apply platform markup to materials (15% for supplier profit + platform fee)
+    const PLATFORM_MARKUP = 1.15;
+    const adjustedMaterials = (analysis.materials || []).map(material => ({
+      ...material,
+      baseCost: material.estimatedCost,
+      estimatedCost: Math.round(material.estimatedCost * PLATFORM_MARKUP * 100) / 100
+    }));
+
     // Return formatted response
     res.json({
       adjustment: overallAdjustment,
       confidence: analysis.confidence || 75,
       insights: analysis.insights || [],
       detectedIssues: analysis.detectedIssues || false,
-      materials: analysis.materials || [],
+      materials: adjustedMaterials,
       factors: {
         complexity: ((analysis.complexity - 1) * 100).toFixed(1),
         condition: ((analysis.condition - 1) * 100).toFixed(1),
