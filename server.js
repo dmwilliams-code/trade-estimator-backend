@@ -148,14 +148,30 @@ Guidelines:
   }
 });
 
-// Helper function to get location from IP
+// Helper function to get location from IP with multiple fallbacks
 async function getLocationFromIP(ip) {
+  // Skip private/local IPs
+  if (!ip || ip === '::1' || ip === '127.0.0.1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
+    console.log('Local IP detected, defaulting to London');
+    return { city: 'London', region: 'England', country: 'United Kingdom' };
+  }
+
   try {
-    // Use ipapi.co free service (1000 requests/day free)
+    // Try primary service: ipapi.co (1000/day free)
+    console.log(`Attempting geolocation for IP: ${ip}`);
     const response = await fetch(`https://ipapi.co/${ip}/json/`);
-    const data = await response.json();
+    const text = await response.text();
+    
+    // Check if we got rate limited
+    if (text.includes('Too many requests') || text.includes('rate limit')) {
+      console.log('Rate limited on ipapi.co, trying fallback...');
+      return await getLocationFallback(ip);
+    }
+    
+    const data = JSON.parse(text);
     
     if (data.city && data.country_code === 'GB') {
+      console.log(`Location detected: ${data.city}, ${data.region}`);
       return {
         city: data.city,
         region: data.region,
@@ -164,14 +180,40 @@ async function getLocationFromIP(ip) {
       };
     }
     
-    // Default to London if not in UK or can't detect
+    // If not in UK, default to London
+    console.log(`Non-UK IP detected (${data.country_code}), defaulting to London`);
     return { city: 'London', region: 'England', country: 'United Kingdom' };
+    
   } catch (error) {
-    console.error('IP geolocation error:', error);
-    return { city: 'London', region: 'England', country: 'United Kingdom' };
+    console.error('Primary IP geolocation error:', error.message);
+    return await getLocationFallback(ip);
   }
 }
 
+// Fallback geolocation service
+async function getLocationFallback(ip) {
+  try {
+    // Fallback: ip-api.com (free, no key required)
+    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,region,regionName,city,zip`);
+    const data = await response.json();
+    
+    if (data.status === 'success' && data.countryCode === 'GB') {
+      console.log(`Fallback location detected: ${data.city}, ${data.regionName}`);
+      return {
+        city: data.city,
+        region: data.regionName,
+        postcode: data.zip,
+        country: data.country
+      };
+    }
+  } catch (fallbackError) {
+    console.error('Fallback geolocation error:', fallbackError.message);
+  }
+  
+  // Ultimate fallback
+  console.log('All geolocation attempts failed, defaulting to London');
+  return { city: 'London', region: 'England', country: 'United Kingdom' };
+}
 app.post('/api/search-contractors', async (req, res) => {
   try {
     const { jobType, location } = req.body;
