@@ -36,7 +36,7 @@ app.post('/api/analyze-photos', async (req, res) => {
     console.log(`Analyzing ${images.length} photos for ${jobType}`);
 
     // Prepare prompt for AI
-    const prompt = `You are an expert construction and renovation estimator. Analyze these photos of a ${jobType} project.
+const prompt = `You are an expert construction, decoration and renovation estimator. Analyse these photos of a ${jobType} project.
 
 Please evaluate and provide your assessment as JSON with this exact structure:
 {
@@ -46,7 +46,11 @@ Please evaluate and provide your assessment as JSON with this exact structure:
   "materialQuality": 1.0,
   "insights": ["insight 1", "insight 2", "insight 3"],
   "detectedIssues": false,
-  "confidence": 85
+  "confidence": 85,
+  "materials": [
+    {"item": "Paint (5L)", "quantity": 3, "unit": "tins", "estimatedCost": 45},
+    {"item": "Primer", "quantity": 2, "unit": "litres", "estimatedCost": 25}
+  ]
 }
 
 Guidelines:
@@ -56,7 +60,8 @@ Guidelines:
 - materialQuality: 0.95 to 1.1 (basic=0.95-1.0, standard=1.0, high-end=1.0-1.1)
 - insights: 3-5 specific observations about the space
 - detectedIssues: true if any problems found
-- confidence: 70-95 based on photo quality and coverage`;
+- confidence: 70-95 based on photo quality and coverage
+- materials: List 5-10 key materials needed with realistic quantities and costs in GBP`;
 
     // Prepare image messages
     const imageMessages = images.slice(0, 5).map(img => ({
@@ -113,6 +118,7 @@ Guidelines:
       confidence: analysis.confidence || 75,
       insights: analysis.insights || [],
       detectedIssues: analysis.detectedIssues || false,
+      materials: analysis.materials || [],
       factors: {
         complexity: ((analysis.complexity - 1) * 100).toFixed(1),
         condition: ((analysis.condition - 1) * 100).toFixed(1),
