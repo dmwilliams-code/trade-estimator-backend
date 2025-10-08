@@ -148,93 +148,20 @@ Guidelines:
   }
 });
 
-// Helper function to get location from IP with multiple fallbacks
-async function getLocationFromIP(ip) {
-  // Skip private/local IPs
-  if (!ip || ip === '::1' || ip === '127.0.0.1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
-    console.log('Local IP detected, defaulting to London');
-    return { city: 'London', region: 'England', country: 'United Kingdom' };
-  }
-
-  try {
-    // Try primary service: ipapi.co (1000/day free)
-    console.log(`Attempting geolocation for IP: ${ip}`);
-    const response = await fetch(`https://ipapi.co/${ip}/json/`);
-    const text = await response.text();
-    
-    // Check if we got rate limited
-    if (text.includes('Too many requests') || text.includes('rate limit')) {
-      console.log('Rate limited on ipapi.co, trying fallback...');
-      return await getLocationFallback(ip);
-    }
-    
-    const data = JSON.parse(text);
-    
-    if (data.city && data.country_code === 'GB') {
-      console.log(`Location detected: ${data.city}, ${data.region}`);
-      return {
-        city: data.city,
-        region: data.region,
-        postcode: data.postal,
-        country: data.country_name
-      };
-    }
-    
-    // If not in UK, default to London
-    console.log(`Non-UK IP detected (${data.country_code}), defaulting to London`);
-    return { city: 'London', region: 'England', country: 'United Kingdom' };
-    
-  } catch (error) {
-    console.error('Primary IP geolocation error:', error.message);
-    return await getLocationFallback(ip);
-  }
-}
-
-// Fallback geolocation service
-async function getLocationFallback(ip) {
-  try {
-    // Fallback: ip-api.com (free, no key required)
-    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,region,regionName,city,zip`);
-    const data = await response.json();
-    
-    if (data.status === 'success' && data.countryCode === 'GB') {
-      console.log(`Fallback location detected: ${data.city}, ${data.regionName}`);
-      return {
-        city: data.city,
-        region: data.regionName,
-        postcode: data.zip,
-        country: data.country
-      };
-    }
-  } catch (fallbackError) {
-    console.error('Fallback geolocation error:', fallbackError.message);
-  }
-  
-  // Ultimate fallback
-  console.log('All geolocation attempts failed, defaulting to London');
-  return { city: 'London', region: 'England', country: 'United Kingdom' };
-}
 app.post('/api/search-contractors', async (req, res) => {
   try {
     const { jobType, location } = req.body;
-    
-    // Get user's IP address
-    const userIP = req.headers['x-forwarded-for']?.split(',')[0] || 
-                   req.headers['x-real-ip'] || 
-                   req.connection.remoteAddress || 
-                   req.socket.remoteAddress;
-    
-    console.log(`Request from IP: ${userIP}`);
-    
-    // Get location from IP if not provided
-    let searchLocation = location;
-    let detectedLocation = null;
-    
-    if (!searchLocation) {
-      detectedLocation = await getLocationFromIP(userIP);
-      searchLocation = detectedLocation.city;
-      console.log(`Auto-detected location: ${searchLocation}`);
+
+    if (!jobType) {
+      return res.status(400).json({ error: 'Job type is required' });
     }
+
+    if (!location) {
+      return res.status(400).json({ error: 'Location is required' });
+    }
+
+    const searchLocation = location;
+    console.log(`Searching for contractors in: ${searchLocation}`);
 
     // Map our job types to search queries
     const jobTypeMapping = {
@@ -374,7 +301,6 @@ res.json({
   searchQuery: fullQuery,
   totalFound: response.data.results.length,
   qualityFiltered: allContractors.length,
-  detectedLocation: detectedLocation,
   filters: {
     minimumRating: MINIMUM_RATING,
     minimumReviews: MINIMUM_REVIEWS
