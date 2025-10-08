@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const OpenAI = require('openai');
+const { Client } = require('@googlemaps/google-maps-services-js');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -10,6 +11,9 @@ const port = process.env.PORT || 3001;
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
+
+// Initialize Google Places client
+const googlePlacesClient = new Client({});
 
 // Middleware
 app.use(cors());
@@ -139,6 +143,206 @@ Guidelines:
     console.error('Error analyzing photos:', error);
     res.status(500).json({ 
       error: 'Failed to analyze photos',
+      message: error.message 
+    });
+  }
+});
+
+// Helper function to get location from IP
+async function getLocationFromIP(ip) {
+  try {
+    // Use ipapi.co free service (1000 requests/day free)
+    const response = await fetch(`https://ipapi.co/${ip}/json/`);
+    const data = await response.json();
+    
+    if (data.city && data.country_code === 'GB') {
+      return {
+        city: data.city,
+        region: data.region,
+        postcode: data.postal,
+        country: data.country_name
+      };
+    }
+    
+    // Default to London if not in UK or can't detect
+    return { city: 'London', region: 'England', country: 'United Kingdom' };
+  } catch (error) {
+    console.error('IP geolocation error:', error);
+    return { city: 'London', region: 'England', country: 'United Kingdom' };
+  }
+}
+
+app.post('/api/search-contractors', async (req, res) => {
+  try {
+    const { jobType, location } = req.body;
+    
+    // Get user's IP address
+    const userIP = req.headers['x-forwarded-for']?.split(',')[0] || 
+                   req.headers['x-real-ip'] || 
+                   req.connection.remoteAddress || 
+                   req.socket.remoteAddress;
+    
+    console.log(`Request from IP: ${userIP}`);
+    
+    // Get location from IP if not provided
+    let searchLocation = location;
+    let detectedLocation = null;
+    
+    if (!searchLocation) {
+      detectedLocation = await getLocationFromIP(userIP);
+      searchLocation = detectedLocation.city;
+      console.log(`Auto-detected location: ${searchLocation}`);
+    }
+
+    // Map our job types to search queries
+    const jobTypeMapping = {
+        'extension': ['home extension builder', 'house extension contractor', 'building extension'],
+        'loft-conversion': ['loft conversion specialist', 'attic conversion', 'loft builder'],
+        'new-roof': ['roofing contractor', 'roofer', 'roof specialist'],
+        'driveway': ['driveway installer', 'driveway contractor', 'paving specialist'],
+        'painting-room': ['painter decorator', 'interior painter', 'painting contractor'],
+        'wallpapering': ['wallpaper installer', 'wallpapering specialist', 'decorator'],
+        'floor-sanding': ['floor sanding service', 'floor refinishing', 'wood floor specialist'],
+        'bathroom-install': ['bathroom fitter', 'bathroom installer', 'bathroom renovation'],
+        'boiler-replacement': ['boiler installer', 'heating engineer', 'boiler specialist'],
+        'radiator-install': ['heating engineer', 'central heating installer', 'plumber'],
+        'rewire': ['electrician rewiring', 'electrical rewiring', 'house rewire electrician'],
+        'consumer-unit': ['electrician', 'electrical contractor', 'fuse box electrician'],
+        'ev-charger': ['EV charger installer', 'electric car charger', 'EV charging point installer']
+
+    };
+
+    const searchTerms = jobTypeMapping[jobType] || [jobType];
+    const searchQuery = searchTerms[0]; // Use primary term for now
+    const fullQuery = `${searchQuery} in ${searchLocation}`;
+
+    console.log(`Searching for: ${fullQuery}`);
+
+    // Search Google Places
+    const response = await googlePlacesClient.textSearch({
+      params: {
+        query: fullQuery,
+        key: process.env.GOOGLE_PLACES_API_KEY,
+        type: 'electrician|general_contractor|plumber|painter'
+      }
+    });
+
+    if (response.data.status !== 'OK' && response.data.status !== 'ZERO_RESULTS') {
+      throw new Error(`Google Places API error: ${response.data.status}`);
+    }
+
+    // Filter and map results
+const MINIMUM_RATING = 4.0;
+const MINIMUM_REVIEWS = 5;
+
+const allContractors = response.data.results
+  .filter(place => {
+    // Filter by minimum rating and review count
+    const rating = place.rating || 0;
+    const reviews = place.user_ratings_total || 0;
+    return rating >= MINIMUM_RATING && reviews >= MINIMUM_REVIEWS;
+  })
+  .map(place => ({
+    name: place.name,
+    address: place.formatted_address,
+    rating: place.rating || 0,
+    totalReviews: place.user_ratings_total || 0,
+    phoneNumber: place.formatted_phone_number,
+    website: place.website,
+    location: place.geometry.location,
+    placeId: place.place_id,
+    openNow: place.opening_hours?.open_now,
+    priceLevel: place.price_level,
+    types: place.types
+  }));
+
+console.log(`Found ${allContractors.length} contractors matching criteria (${MINIMUM_RATING}+ rating, ${MINIMUM_REVIEWS}+ reviews)`);
+
+// If we don't have enough contractors, relax the filters
+const contractors = allContractors.length >= 3 
+  ? allContractors 
+  : response.data.results.slice(0, 5).map(place => ({
+      name: place.name,
+      address: place.formatted_address,
+      rating: place.rating || 0,
+      totalReviews: place.user_ratings_total || 0,
+      phoneNumber: place.formatted_phone_number,
+      website: place.website,
+      location: place.geometry.location,
+      placeId: place.place_id,
+      openNow: place.opening_hours?.open_now,
+      priceLevel: place.price_level,
+      types: place.types
+    }));
+
+// Calculate a match score with improved criteria
+const scoredContractors = contractors.map(contractor => {
+  let score = 0;
+  let breakdown = {};
+  
+  // 1. Rating weight (35%) - High ratings matter
+  const ratingScore = (contractor.rating / 5) * 35;
+  score += ratingScore;
+  breakdown.rating = ratingScore.toFixed(1);
+  
+  // 2. Review count weight (25%) - More reviews = more reliable
+  // Logarithmic scale - diminishing returns after 100 reviews
+  const reviewScore = Math.min(Math.log10(contractor.totalReviews + 1) / 2, 1) * 25;
+  score += reviewScore;
+  breakdown.reviews = reviewScore.toFixed(1);
+  
+  // 3. Relevance weight (20%) - Does name/types match job?
+  let relevanceScore = 0;
+  const nameAndTypes = `${contractor.name} ${contractor.types.join(' ')}`.toLowerCase();
+  const jobKeywords = searchQuery.toLowerCase().split(' ');
+  
+  jobKeywords.forEach(keyword => {
+    if (nameAndTypes.includes(keyword)) {
+      relevanceScore += 5;
+    }
+  });
+  relevanceScore = Math.min(relevanceScore, 20);
+  score += relevanceScore;
+  breakdown.relevance = relevanceScore.toFixed(1);
+  
+  // 4. Active/Open weight (10%)
+  const activeScore = contractor.openNow ? 10 : 0;
+  score += activeScore;
+  breakdown.active = activeScore.toFixed(1);
+  
+  // 5. Professional presence (10%) - Website + multiple contact methods
+  let professionalScore = 0;
+  if (contractor.website) professionalScore += 5;
+  if (contractor.phoneNumber) professionalScore += 5;
+  score += professionalScore;
+  breakdown.professional = professionalScore.toFixed(1);
+  
+  return {
+    ...contractor,
+    matchScore: Math.round(score),
+    scoreBreakdown: breakdown
+  };
+});
+
+    // Sort by match score
+    scoredContractors.sort((a, b) => b.matchScore - a.matchScore);
+
+res.json({
+  contractors: scoredContractors.slice(0, 5),
+  searchQuery: fullQuery,
+  totalFound: response.data.results.length,
+  qualityFiltered: allContractors.length,
+  detectedLocation: detectedLocation,
+  filters: {
+    minimumRating: MINIMUM_RATING,
+    minimumReviews: MINIMUM_REVIEWS
+  }
+});
+
+  } catch (error) {
+    console.error('Contractor search error:', error);
+    res.status(500).json({ 
+      error: 'Failed to search contractors',
       message: error.message 
     });
   }
