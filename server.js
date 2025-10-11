@@ -148,7 +148,7 @@ Guidelines:
   }
 });
 
- // Helper function to lookup postcode and get town/city
+// Helper function to lookup UK postcode and get town/city
 async function lookupPostcode(postcode) {
   try {
     const cleanPostcode = postcode.trim().replace(/\s+/g, '');
@@ -161,11 +161,18 @@ async function lookupPostcode(postcode) {
     const data = await response.json();
     
     if (data.status === 200 && data.result) {
-      // Return the most specific location available
+      // Prefer most specific location: parish/ward > admin_district > postcode area
+      const specificLocation = 
+        data.result.parish_ward || 
+        data.result.admin_ward ||
+        data.result.admin_district ||
+        data.result.postcode.split(' ')[0]; // Fallback to postcode area
+      
       return {
-        city: data.result.admin_district || data.result.parish || data.result.postcode,
+        city: specificLocation,
         region: data.result.region,
-        district: data.result.admin_district
+        district: data.result.admin_district,
+        country: data.result.country
       };
     }
     
@@ -199,10 +206,17 @@ if (postcodePattern.test(location.trim())) {
   console.log(`Detected postcode format: ${location}`);
   locationDetails = await lookupPostcode(location);
   
-  if (locationDetails) {
-    // Use the town/city from the postcode lookup
-    searchLocation = locationDetails.city || locationDetails.district;
-    console.log(`Converted postcode ${location} to: ${searchLocation}, ${locationDetails.region}`);
+if (locationDetails) {
+  // Use the town/city from the postcode lookup
+  searchLocation = locationDetails.city;
+  
+  // If it's still too generic (a county), add UK to help Google Places
+  const genericLocations = ['Wiltshire', 'Somerset', 'Devon', 'Cornwall', 'Yorkshire', 'Lancashire'];
+  if (genericLocations.some(loc => searchLocation.includes(loc))) {
+    searchLocation = `${searchLocation} UK`;
+  }
+  
+  console.log(`Converted postcode ${location} to: ${searchLocation} (${locationDetails.district}, ${locationDetails.region})`);
   } else {
     console.log(`Postcode lookup failed, using postcode as-is: ${location}`);
     // Keep original postcode if lookup fails
