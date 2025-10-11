@@ -200,16 +200,17 @@ app.post('/api/search-contractors', async (req, res) => {
       throw new Error(`Google Places API error: ${response.data.status}`);
     }
 
-    // Filter and map results
-const MINIMUM_RATING = 4.0;
-const MINIMUM_REVIEWS = 5;
+// Try strict filters first, then relax if needed
+const STRICT_MIN_RATING = 4.0;
+const STRICT_MIN_REVIEWS = 5;
+const RELAXED_MIN_RATING = 3.5;
+const RELAXED_MIN_REVIEWS = 3;
 
-const allContractors = response.data.results
+const strictContractors = response.data.results
   .filter(place => {
-    // Filter by minimum rating and review count
     const rating = place.rating || 0;
     const reviews = place.user_ratings_total || 0;
-    return rating >= MINIMUM_RATING && reviews >= MINIMUM_REVIEWS;
+    return rating >= STRICT_MIN_RATING && reviews >= STRICT_MIN_REVIEWS;
   })
   .map(place => ({
     name: place.name,
@@ -222,15 +223,29 @@ const allContractors = response.data.results
     placeId: place.place_id,
     openNow: place.opening_hours?.open_now,
     priceLevel: place.price_level,
-    types: place.types
+    types: place.types,
+    qualityVerified: true // Meets strict criteria
   }));
 
-console.log(`Found ${allContractors.length} contractors matching criteria (${MINIMUM_RATING}+ rating, ${MINIMUM_REVIEWS}+ reviews)`);
+// If we have at least 3 strict results, use them
+let contractors = strictContractors;
+let filtersUsed = {
+  minimumRating: STRICT_MIN_RATING,
+  minimumReviews: STRICT_MIN_REVIEWS,
+  relaxed: false
+};
 
-// If we don't have enough contractors, relax the filters
-const contractors = allContractors.length >= 3 
-  ? allContractors 
-  : response.data.results.slice(0, 5).map(place => ({
+// Otherwise, relax the filters
+if (strictContractors.length < 3) {
+  console.log(`Only ${strictContractors.length} contractors with strict filters, relaxing criteria...`);
+  
+  const relaxedContractors = response.data.results
+    .filter(place => {
+      const rating = place.rating || 0;
+      const reviews = place.user_ratings_total || 0;
+      return rating >= RELAXED_MIN_RATING && reviews >= RELAXED_MIN_REVIEWS;
+    })
+    .map(place => ({
       name: place.name,
       address: place.formatted_address,
       rating: place.rating || 0,
@@ -241,8 +256,20 @@ const contractors = allContractors.length >= 3
       placeId: place.place_id,
       openNow: place.opening_hours?.open_now,
       priceLevel: place.price_level,
-      types: place.types
+      types: place.types,
+      qualityVerified: false // Doesn't meet strict criteria
     }));
+  
+  contractors = relaxedContractors;
+  filtersUsed = {
+    minimumRating: RELAXED_MIN_RATING,
+    minimumReviews: RELAXED_MIN_REVIEWS,
+    relaxed: true
+  };
+}
+
+console.log(`Found ${contractors.length} contractors matching criteria`);
+
 
 // Calculate a match score with improved criteria
 const scoredContractors = contractors.map(contractor => {
@@ -296,15 +323,12 @@ const scoredContractors = contractors.map(contractor => {
     // Sort by match score
     scoredContractors.sort((a, b) => b.matchScore - a.matchScore);
 
+// Return top 5 contractors
 res.json({
   contractors: scoredContractors.slice(0, 5),
   searchQuery: fullQuery,
   totalFound: response.data.results.length,
-  qualityFiltered: allContractors.length,
-  filters: {
-    minimumRating: MINIMUM_RATING,
-    minimumReviews: MINIMUM_REVIEWS
-  }
+  filters: filtersUsed
 });
 
   } catch (error) {
