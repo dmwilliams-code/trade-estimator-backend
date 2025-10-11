@@ -343,12 +343,12 @@ const strictContractors = response.data.results
     const reviews = place.user_ratings_total || 0;
     return rating >= STRICT_MIN_RATING && reviews >= STRICT_MIN_REVIEWS;
   })
-  .map(place => ({
-    name: place.name,
-    address: place.formatted_address,
-    rating: place.rating || 0,
-    totalReviews: place.user_ratings_total || 0,
-    phoneNumber: place.formatted_phone_number,
+ .map(place => ({
+  name: place.name,
+  address: place.formatted_address || place.vicinity || 'Address not available',
+  rating: place.rating || 0,
+  totalReviews: place.user_ratings_total || 0,
+  phoneNumber: place.formatted_phone_number || place.international_phone_number,
     website: place.website,
     location: place.geometry.location,
     placeId: place.place_id,
@@ -376,12 +376,12 @@ if (strictContractors.length < 3) {
       const reviews = place.user_ratings_total || 0;
       return rating >= RELAXED_MIN_RATING && reviews >= RELAXED_MIN_REVIEWS;
     })
-    .map(place => ({
-      name: place.name,
-      address: place.formatted_address,
-      rating: place.rating || 0,
-      totalReviews: place.user_ratings_total || 0,
-      phoneNumber: place.formatted_phone_number,
+.map(place => ({
+  name: place.name,
+  address: place.formatted_address || place.vicinity || 'Address not available',
+  rating: place.rating || 0,
+  totalReviews: place.user_ratings_total || 0,
+  phoneNumber: place.formatted_phone_number || place.international_phone_number,
       website: place.website,
       location: place.geometry.location,
       placeId: place.place_id,
