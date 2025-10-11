@@ -148,6 +148,34 @@ Guidelines:
   }
 });
 
+ // Helper function to lookup postcode and get town/city
+async function lookupPostcode(postcode) {
+  try {
+    const cleanPostcode = postcode.trim().replace(/\s+/g, '');
+    const response = await fetch(`https://api.postcodes.io/postcodes/${cleanPostcode}`);
+    
+    if (!response.ok) {
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (data.status === 200 && data.result) {
+      // Return the most specific location available
+      return {
+        city: data.result.admin_district || data.result.parish || data.result.postcode,
+        region: data.result.region,
+        district: data.result.admin_district
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Postcode lookup error:', error.message);
+    return null;
+  }
+}
+
 app.post('/api/search-contractors', async (req, res) => {
   try {
     const { jobType, location } = req.body;
@@ -160,8 +188,30 @@ app.post('/api/search-contractors', async (req, res) => {
       return res.status(400).json({ error: 'Location is required' });
     }
 
-    const searchLocation = location;
-    console.log(`Searching for contractors in: ${searchLocation}`);
+// Handle UK postcodes - look them up via API
+let searchLocation = location;
+let locationDetails = null;
+
+// Check if it looks like a UK postcode (e.g., "BA14 8UZ" or "SW1A1AA")
+const postcodePattern = /^[A-Z]{1,2}[0-9]{1,2}[A-Z]?\s?[0-9][A-Z]{2}$/i;
+
+if (postcodePattern.test(location.trim())) {
+  console.log(`Detected postcode format: ${location}`);
+  locationDetails = await lookupPostcode(location);
+  
+  if (locationDetails) {
+    // Use the town/city from the postcode lookup
+    searchLocation = locationDetails.city || locationDetails.district;
+    console.log(`Converted postcode ${location} to: ${searchLocation}, ${locationDetails.region}`);
+  } else {
+    console.log(`Postcode lookup failed, using postcode as-is: ${location}`);
+    // Keep original postcode if lookup fails
+  }
+} else {
+  console.log(`Not a postcode format, using as city name: ${searchLocation}`);
+}
+
+console.log(`Final search location: ${searchLocation}`);
 
     // Map our job types to search queries
     const jobTypeMapping = {
