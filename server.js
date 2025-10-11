@@ -198,6 +198,24 @@ app.post('/api/search-contractors', async (req, res) => {
       return res.status(400).json({ error: 'Location is required' });
     }
 
+    // Map our job types to search queries
+    const jobTypeMapping = {
+        'extension': ['home extension builder', 'house extension contractor', 'building extension'],
+        'loft-conversion': ['loft conversion specialist', 'attic conversion', 'loft builder'],
+        'new-roof': ['roofing contractor', 'roofer', 'roof specialist'],
+        'driveway': ['driveway installer', 'driveway contractor', 'paving specialist'],
+        'painting-room': ['painter decorator', 'interior painter', 'painting contractor'],
+        'wallpapering': ['wallpaper installer', 'wallpapering specialist', 'decorator'],
+        'floor-sanding': ['floor sanding service', 'floor refinishing', 'wood floor specialist'],
+        'bathroom-install': ['bathroom fitter', 'bathroom installer', 'bathroom renovation'],
+        'boiler-replacement': ['boiler installer', 'heating engineer', 'boiler specialist'],
+        'radiator-install': ['heating engineer', 'central heating installer', 'plumber'],
+        'rewire': ['electrician rewiring', 'electrical rewiring', 'house rewire electrician'],
+        'consumer-unit': ['electrician', 'electrical contractor', 'fuse box electrician'],
+        'ev-charger': ['EV charger installer', 'electric car charger', 'EV charging point installer']
+
+    };
+
 const searchTerms = jobTypeMapping[jobType] || [jobType];
 const searchQuery = searchTerms[0];
 
@@ -263,23 +281,7 @@ if (locationDetails) {
 
 console.log(`Final search location: ${searchLocation}`);
 
-    // Map our job types to search queries
-    const jobTypeMapping = {
-        'extension': ['home extension builder', 'house extension contractor', 'building extension'],
-        'loft-conversion': ['loft conversion specialist', 'attic conversion', 'loft builder'],
-        'new-roof': ['roofing contractor', 'roofer', 'roof specialist'],
-        'driveway': ['driveway installer', 'driveway contractor', 'paving specialist'],
-        'painting-room': ['painter decorator', 'interior painter', 'painting contractor'],
-        'wallpapering': ['wallpaper installer', 'wallpapering specialist', 'decorator'],
-        'floor-sanding': ['floor sanding service', 'floor refinishing', 'wood floor specialist'],
-        'bathroom-install': ['bathroom fitter', 'bathroom installer', 'bathroom renovation'],
-        'boiler-replacement': ['boiler installer', 'heating engineer', 'boiler specialist'],
-        'radiator-install': ['heating engineer', 'central heating installer', 'plumber'],
-        'rewire': ['electrician rewiring', 'electrical rewiring', 'house rewire electrician'],
-        'consumer-unit': ['electrician', 'electrical contractor', 'fuse box electrician'],
-        'ev-charger': ['EV charger installer', 'electric car charger', 'EV charging point installer']
 
-    };
 
  
     const fullQuery = `${searchQuery} in ${searchLocation}`;
