@@ -14,6 +14,7 @@ const openai = new OpenAI({
 
 // Initialize Google Places client
 const googlePlacesClient = new Client({});
+let searchResults;
 
 // Middleware
 app.use(cors());
@@ -172,7 +173,9 @@ async function lookupPostcode(postcode) {
         city: specificLocation,
         region: data.result.region,
         district: data.result.admin_district,
-        country: data.result.country
+        country: data.result.country,
+        latitude: data.result.latitude,
+        longitude: data.result.longitude
       };
     }
     
@@ -194,6 +197,39 @@ app.post('/api/search-contractors', async (req, res) => {
     if (!location) {
       return res.status(400).json({ error: 'Location is required' });
     }
+
+const searchTerms = jobTypeMapping[jobType] || [jobType];
+const searchQuery = searchTerms[0];
+
+// Map job types to Google Places business types
+const jobTypeToGoogleTypes = {
+  // Construction
+  'extension': ['general_contractor', 'home_builder', 'construction_company'],
+  'loft-conversion': ['general_contractor', 'roofing_contractor', 'home_builder'],
+  'new-roof': ['roofing_contractor', 'general_contractor'],
+  'driveway': ['general_contractor', 'paving_contractor'],
+  
+  // Decoration
+  'painting-room': ['painter', 'painting_contractor'],
+  'wallpapering': ['painter', 'interior_decorator'],
+  'floor-sanding': ['flooring_contractor', 'flooring_store'],
+  
+  // Plumbing
+  'bathroom-install': ['plumber', 'bathroom_remodeler'],
+  'boiler-replacement': ['plumber', 'heating_contractor'],
+  'radiator-install': ['plumber', 'heating_contractor'],
+  
+  // Electrical
+  'rewire': ['electrician'],
+  'consumer-unit': ['electrician'],
+  'ev-charger': ['electrician', 'car_repair']
+};
+
+// Get relevant types for this job, default to general_contractor
+const relevantTypes = jobTypeToGoogleTypes[jobType] || ['general_contractor'];
+const typesString = relevantTypes.join('|');
+
+console.log(`Using Google Places types: ${typesString}`);
 
 // Handle UK postcodes - look them up via API
 let searchLocation = location;
@@ -245,20 +281,49 @@ console.log(`Final search location: ${searchLocation}`);
 
     };
 
-    const searchTerms = jobTypeMapping[jobType] || [jobType];
-    const searchQuery = searchTerms[0]; // Use primary term for now
+ 
     const fullQuery = `${searchQuery} in ${searchLocation}`;
 
     console.log(`Searching for: ${fullQuery}`);
 
-    // Search Google Places
-    const response = await googlePlacesClient.textSearch({
-      params: {
-        query: fullQuery,
-        key: process.env.GOOGLE_PLACES_API_KEY,
-        type: 'electrician|general_contractor|plumber|painter'
-      }
-    });
+// Get coordinates from postcode if available
+let searchParams;
+
+if (locationDetails && locationDetails.latitude && locationDetails.longitude) {
+  // Use nearby search with coordinates and radius
+  const radiusMeters = 16000; // 10 miles = ~16km
+  
+  console.log(`Searching within ${radiusMeters/1000}km of coordinates: ${locationDetails.latitude}, ${locationDetails.longitude}`);
+  
+  searchParams = {
+    location: `${locationDetails.latitude},${locationDetails.longitude}`,
+    radius: radiusMeters,
+    keyword: searchQuery,
+    key: process.env.GOOGLE_PLACES_API_KEY,
+    type: typesString
+  };
+  
+  const response = await googlePlacesClient.placesNearby({
+    params: searchParams
+  });
+  
+  searchResults = response;
+} else {
+  // Fallback to text search if no coordinates
+  console.log(`No coordinates available, using text search: ${fullQuery}`);
+  
+  const response = await googlePlacesClient.textSearch({
+    params: {
+      query: fullQuery,
+      key: process.env.GOOGLE_PLACES_API_KEY,
+      type: typesString
+    }
+  });
+  
+  searchResults = response;
+}
+
+const response = searchResults;
 
     if (response.data.status !== 'OK' && response.data.status !== 'ZERO_RESULTS') {
       throw new Error(`Google Places API error: ${response.data.status}`);
