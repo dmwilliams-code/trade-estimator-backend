@@ -212,8 +212,9 @@ app.post('/api/search-contractors', async (req, res) => {
         'radiator-install': ['heating engineer', 'central heating installer', 'plumber'],
         'rewire': ['electrician rewiring', 'electrical rewiring', 'house rewire electrician'],
         'consumer-unit': ['electrician', 'electrical contractor', 'fuse box electrician'],
-        'ev-charger': ['EV charger installer', 'electric car charger', 'EV charging point installer']
-
+        'ev-charger': ['EV charger installer', 'electric car charger', 'EV charging point installer'],
+        'garden-landscaping': ['garden landscaper', 'landscaping contractor', 'garden designer'],
+        'window-cleaning': ['window cleaner', 'window cleaning service', 'professional window cleaner']
     };
 
 const searchTerms = jobTypeMapping[jobType] || [jobType];
@@ -240,7 +241,11 @@ const jobTypeToGoogleTypes = {
   // Electrical
   'rewire': ['electrician'],
   'consumer-unit': ['electrician'],
-  'ev-charger': ['electrician', 'car_repair']
+  'ev-charger': ['electrician', 'car_repair'],
+
+    // Outdoor
+  'garden-landscaping': ['landscaping', 'landscape_designer', 'lawn_care'],
+  'window-cleaning': ['window_cleaning_service', 'cleaning_service']
 };
 
 // Get relevant types for this job, default to general_contractor
