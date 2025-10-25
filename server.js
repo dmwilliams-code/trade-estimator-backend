@@ -149,7 +149,7 @@ Guidelines:
   }
 });
 
-// Helper function to lookup UK postcode and get town/city
+// Helper function to lookup UK postcode and get town/city with cost multiplier
 async function lookupPostcode(postcode) {
   try {
     const cleanPostcode = postcode.trim().replace(/\s+/g, '');
@@ -162,12 +162,14 @@ async function lookupPostcode(postcode) {
     const data = await response.json();
     
     if (data.status === 200 && data.result) {
-      // Prefer most specific location: parish/ward > admin_district > postcode area
       const specificLocation = 
         data.result.parish_ward || 
         data.result.admin_ward ||
         data.result.admin_district ||
-        data.result.postcode.split(' ')[0]; // Fallback to postcode area
+        data.result.postcode.split(' ')[0];
+      
+      // Calculate cost multiplier based on real data
+      const costMultiplier = calculateCostMultiplier(data.result);
       
       return {
         city: specificLocation,
@@ -175,7 +177,9 @@ async function lookupPostcode(postcode) {
         district: data.result.admin_district,
         country: data.result.country,
         latitude: data.result.latitude,
-        longitude: data.result.longitude
+        longitude: data.result.longitude,
+        costMultiplier: costMultiplier,
+        costReason: getCostReason(data.result, costMultiplier)
       };
     }
     
@@ -184,6 +188,77 @@ async function lookupPostcode(postcode) {
     console.error('Postcode lookup error:', error.message);
     return null;
   }
+}
+
+// Calculate cost multiplier based on postcode data
+function calculateCostMultiplier(postcodeData) {
+  // London (region check)
+  if (postcodeData.region === 'London') {
+    return 1.5;
+  }
+  
+  // Use average income/house prices as proxy (from parliamentary constituency)
+  // High-value areas based on region and district
+  const highCostRegions = ['South East', 'East of England'];
+  const highCostDistricts = [
+    'Oxford', 'Cambridge', 'Brighton and Hove', 'Bath and North East Somerset',
+    'Windsor and Maidenhead', 'Wokingham', 'Surrey', 'Buckinghamshire',
+    'Hertfordshire', 'Bristol', 'Edinburgh', 'St Albans', 'Winchester',
+    'Guildford', 'Elmbridge', 'Mole Valley', 'Waverley'
+  ];
+  
+  // Check if in high cost district
+  if (highCostDistricts.some(district => 
+    postcodeData.admin_district?.includes(district) || 
+    postcodeData.parliamentary_constituency?.includes(district)
+  )) {
+    return 1.25;
+  }
+  
+  // Check if in high cost region (but not specific district)
+  if (highCostRegions.includes(postcodeData.region)) {
+    return 1.15;
+  }
+  
+  // Low cost areas (based on lower average incomes)
+  const lowCostRegions = ['North East', 'Yorkshire and The Humber', 'North West', 'Wales'];
+  const lowCostDistricts = [
+    'Burnley', 'Blackpool', 'Stoke', 'Kingston upon Hull', 'Middlesbrough',
+    'Hartlepool', 'Blackburn', 'Bradford', 'Barnsley', 'Doncaster',
+    'Rotherham', 'Wakefield', 'Sunderland', 'Gateshead', 'South Tyneside',
+    'Blaenau Gwent', 'Merthyr Tydfil', 'Neath Port Talbot'
+  ];
+  
+  // Check if in low cost district
+  if (lowCostDistricts.some(district => 
+    postcodeData.admin_district?.includes(district)
+  )) {
+    return 0.85;
+  }
+  
+  // Check if in lower cost region (but not specific low cost district)
+  if (lowCostRegions.includes(postcodeData.region)) {
+    return 0.92;
+  }
+  
+  // Scotland (excluding Edinburgh)
+  if (postcodeData.country === 'Scotland' && !postcodeData.admin_district?.includes('Edinburgh')) {
+    return 0.95;
+  }
+  
+  // Default average
+  return 1.0;
+}
+
+// Get human-readable reason for cost multiplier
+function getCostReason(postcodeData, multiplier) {
+  if (multiplier === 1.5) return 'London area';
+  if (multiplier === 1.25) return 'High-value area';
+  if (multiplier === 1.15) return 'South East/East England';
+  if (multiplier === 0.85) return 'Lower cost area';
+  if (multiplier === 0.92) return 'Northern England/Wales';
+  if (multiplier === 0.95) return 'Scotland';
+  return 'Standard pricing area';
 }
 
 app.post('/api/search-contractors', async (req, res) => {
@@ -464,7 +539,12 @@ res.json({
   contractors: scoredContractors.slice(0, 5),
   searchQuery: fullQuery,
   totalFound: response.data.results.length,
-  filters: filtersUsed
+  filters: filtersUsed,
+  locationData: locationDetails ? {
+    costMultiplier: locationDetails.costMultiplier,
+    costReason: locationDetails.costReason,
+    region: locationDetails.region
+  } : null
 });
 
   } catch (error) {
