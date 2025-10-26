@@ -339,6 +339,11 @@ const postcodePattern = /^[A-Z]{1,2}[0-9]{1,2}[A-Z]?\s?[0-9][A-Z]{2}$/i;
 if (postcodePattern.test(location.trim())) {
   console.log(`Detected postcode format: ${location}`);
   locationDetails = await lookupPostcode(location);
+
+  console.log('=== POSTCODE LOOKUP RESULT ===');
+console.log('Location input:', location);
+console.log('Location details:', locationDetails);
+console.log('Cost multiplier:', locationDetails?.costMultiplier);
   
 if (locationDetails) {
   // Use the town/city from the postcode lookup
