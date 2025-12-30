@@ -4,6 +4,27 @@ const cors = require('cors');
 const OpenAI = require('openai');
 const { Client } = require('@googlemaps/google-maps-services-js');
 
+const mongoose = require('mongoose');
+
+// MongoDB Connection
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+    console.log('✅ MongoDB connected successfully');
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error.message);
+    // Don't exit process - app can still run without database
+    console.log('⚠️  App running without database functionality');
+  }
+};
+
+// Connect to database
+connectDB();
+
+
 const app = express();
 const port = process.env.PORT || 3001;
 
@@ -558,6 +579,44 @@ res.json({
       error: 'Failed to search contractors',
       message: error.message 
     });
+  }
+});
+
+const Estimate = require('./models/Estimate');
+
+// Save estimate endpoint
+app.post('/api/save-estimate', async (req, res) => {
+  try {
+    const newEstimate = new Estimate(req.body);
+    const savedEstimate = await newEstimate.save();
+    
+    console.log('💾 Estimate saved:', savedEstimate._id);
+    
+    res.json({
+      success: true,
+      estimateId: savedEstimate._id,
+      message: 'Estimate saved successfully'
+    });
+  } catch (error) {
+    console.error('Error saving estimate:', error);
+    res.status(500).json({ 
+      error: 'Failed to save estimate',
+      message: error.message 
+    });
+  }
+});
+
+// Get recent estimates (for analytics)
+app.get('/api/estimates', async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+    const estimates = await Estimate.find()
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit));
+    
+    res.json({ estimates, count: estimates.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
