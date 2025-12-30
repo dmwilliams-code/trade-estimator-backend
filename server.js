@@ -1,4 +1,5 @@
 require('dotenv').config();
+const crypto = require('crypto'); // Built into Node.js
 const express = require('express');
 const cors = require('cors');
 const OpenAI = require('openai');
@@ -36,6 +37,17 @@ const openai = new OpenAI({
 // Initialize Google Places client
 const googlePlacesClient = new Client({});
 let searchResults;
+
+function hashPostcode(postcode) {
+     if (!postcode || typeof postcode !== 'string') {
+       return null;
+     }
+     const normalized = postcode.toUpperCase().replace(/\s+/g, '');
+     return crypto.createHash('sha256')
+       .update(normalized)
+       .digest('hex')
+       .substring(0, 16);
+   }
 
 // Middleware
 app.use(cors());
@@ -587,18 +599,106 @@ const Estimate = require('./models/Estimate');
 // Save estimate endpoint
 app.post('/api/save-estimate', async (req, res) => {
   try {
-    const newEstimate = new Estimate(req.body);
+    const {
+      category,
+      jobType,
+      jobName,
+      inputType,
+      roomCounts,
+      areaQuantity,
+      userLocation,      // Original postcode (from frontend)
+      locationData,
+      quality,
+      photoAnalysis,
+      estimate,
+      multipliers,
+      contractors
+    } = req.body;
+
+    // Validation
+    if (!category || !jobType || !estimate) {
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        required: ['category', 'jobType', 'estimate']
+      });
+    }
+
+    // Hash the postcode (ANONYMIZATION)
+    const locationHash = hashPostcode(userLocation);
+    
+    console.log('🔒 Anonymizing postcode:');
+    console.log('  Original:', userLocation);
+    console.log('  Hashed:', locationHash);
+
+    // Create new estimate document with ANONYMOUS data
+    const newEstimate = new Estimate({
+      // Job details
+      category,
+      jobType,
+      jobName,
+      inputType,
+      
+      // Input details
+      roomCounts: roomCounts || { small: 0, medium: 0, large: 0, extraLarge: 0 },
+      areaQuantity,
+      
+      // Location (ANONYMIZED)
+      locationHash: locationHash,  // Hashed, not actual postcode
+      locationData: {
+        region: locationData?.region,        // Just "London", "Manchester"
+        costMultiplier: locationData?.costMultiplier,
+        costReason: locationData?.costReason
+        // Don't store: city, district, postcode
+      },
+      
+      // Quality
+      quality,
+      
+      // Photo analysis
+      photoAnalysis: photoAnalysis ? {
+        adjustment: photoAnalysis.adjustment,
+        confidence: photoAnalysis.confidence,
+        insights: photoAnalysis.insights,
+        detectedIssues: photoAnalysis.detectedIssues,
+        materials: photoAnalysis.materials
+      } : null,
+      
+      // Estimate results
+      estimate,
+      
+      // Multipliers
+      multipliers,
+      
+      // Contractors (top 5 only - public business data)
+      contractorsShown: contractors ? contractors.slice(0, 5).map(c => ({
+        name: c.name,
+        rating: c.rating,
+        totalReviews: c.totalReviews,
+        matchScore: c.matchScore
+      })) : []
+      
+      // NO PERSONAL DATA:
+      // ipAddress: NOT collected
+      // userAgent: NOT collected
+      // actual postcode: NOT stored (only hash)
+    });
+
+    // Save to database
     const savedEstimate = await newEstimate.save();
     
-    console.log('💾 Estimate saved:', savedEstimate._id);
-    
+    console.log('💾 Estimate saved (anonymous):', savedEstimate._id);
+    console.log('   Region:', savedEstimate.locationData?.region);
+    console.log('   Location hash:', savedEstimate.locationHash);
+
     res.json({
       success: true,
       estimateId: savedEstimate._id,
-      message: 'Estimate saved successfully'
+      message: 'Estimate saved successfully',
+      anonymous: true  // Indicate no personal data collected
     });
+
   } catch (error) {
-    console.error('Error saving estimate:', error);
+    console.error('❌ Error saving estimate:', error);
     res.status(500).json({ 
       error: 'Failed to save estimate',
       message: error.message 

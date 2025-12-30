@@ -1,10 +1,8 @@
 // models/Estimate.js
+// ANONYMOUS VERSION - No Personal Data Collected
+
 const mongoose = require('mongoose');
 
-/**
- * Estimate Schema
- * Stores all user inputs and calculation results for each estimate
- */
 const estimateSchema = new mongoose.Schema({
   // Job Details
   category: {
@@ -42,17 +40,17 @@ const estimateSchema = new mongoose.Schema({
     default: null
   },
   
-  // Location
-  userLocation: {
+  // Location (ANONYMIZED - hashed postcode)
+  locationHash: {
     type: String,
-    required: true
+    default: null,
+    index: true
   },
   locationData: {
-    city: String,
-    region: String,
-    district: String,
+    region: String,          // Just "London", "Manchester", etc.
     costMultiplier: Number,
     costReason: String
+    // NO: city, district, postcode, or specific location
   },
   
   // Quality Selection
@@ -111,30 +109,27 @@ const estimateSchema = new mongoose.Schema({
     photo: Number
   },
   
-  // Contractors recommended (optional - store just basic info)
+  // Contractors recommended (public business data - not personal)
   contractorsShown: [{
     name: String,
     rating: Number,
     totalReviews: Number,
     matchScore: Number
-  }],
+  }]
   
-  // Metadata
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  ipAddress: String,
-  userAgent: String
+  // REMOVED FIELDS (were personal data):
+  // ipAddress: REMOVED
+  // userAgent: REMOVED
+  // userLocation (actual postcode): REMOVED (using locationHash instead)
   
 }, {
-  timestamps: true // Adds createdAt and updatedAt automatically
+  timestamps: true // createdAt and updatedAt are fine (not personal by themselves)
 });
 
 // Indexes for common queries
 estimateSchema.index({ createdAt: -1 }); // Sort by date
 estimateSchema.index({ category: 1, jobType: 1 }); // Filter by job type
-estimateSchema.index({ userLocation: 1 }); // Filter by location
+estimateSchema.index({ 'locationData.region': 1 }); // Filter by region
 
 // Virtual for total number of rooms (calculated field)
 estimateSchema.virtual('totalRooms').get(function() {
@@ -150,7 +145,7 @@ estimateSchema.methods.getSummary = function() {
   return {
     id: this._id,
     job: this.jobName,
-    location: this.userLocation,
+    region: this.locationData?.region || 'Unknown',
     total: `£${this.estimate.total.toFixed(2)}`,
     date: this.createdAt.toLocaleDateString()
   };
