@@ -106,13 +106,13 @@ Guidelines:
       type: "image_url",
       image_url: {
         url: img.data,
-        detail: "high"
+        detail: "auto"
       }
     }));
 
     // Call OpenAI Vision API
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "user",
