@@ -106,7 +106,7 @@ Guidelines:
       type: "image_url",
       image_url: {
         url: img.data,
-        detail: "high"
+        detail: "auto"
       }
     }));
 
