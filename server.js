@@ -59,6 +59,9 @@ app.get('/', (req, res) => {
 });
 
 // Photo analysis endpoint
+// OPTIMIZED Photo Analysis Endpoint
+// Key optimization: Parallel processing + reduced token usage
+
 app.post('/api/analyze-photos', async (req, res) => {
   try {
     const { images, jobType } = req.body;
@@ -71,77 +74,88 @@ app.post('/api/analyze-photos', async (req, res) => {
       return res.status(400).json({ error: 'Maximum 10 images allowed' });
     }
 
-    console.log(`Analyzing ${images.length} photos for ${jobType}`);
+    console.log(`Analysing ${images.length} photos for ${jobType}`);
 
-    // Prepare prompt for AI
-const prompt = `You are an expert construction, decoration and renovation estimator. Analyse these photos of a ${jobType} project.
+    // OPTIMIZATION 1: Split images into batches for parallel processing
+    // Process 2-3 images at a time instead of all 5 sequentially
+    const batchSize = 3;
+    const imageBatches = [];
+    for (let i = 0; i < Math.min(images.length, 5); i += batchSize) {
+      imageBatches.push(images.slice(i, i + batchSize));
+    }
 
-Please evaluate and provide your assessment as JSON with this exact structure:
+    // OPTIMIZATION 2: Shorter, more focused prompt (fewer tokens = faster)
+    const systemPrompt = `Expert construction estimator. Return only JSON:
 {
   "complexity": 1.05,
   "condition": 0.95,
   "access": 1.0,
   "materialQuality": 1.0,
-  "insights": ["insight 1", "insight 2", "insight 3"],
+  "insights": ["observation 1", "observation 2", "observation 3"],
   "detectedIssues": false,
   "confidence": 85,
-  "materials": [
-    {"item": "Paint (5L)", "quantity": 3, "unit": "tins", "estimatedCost": 45},
-    {"item": "Primer", "quantity": 2, "unit": "litres", "estimatedCost": 25}
-  ]
+  "materials": [{"item": "Paint", "quantity": 3, "unit": "tins", "estimatedCost": 45}]
 }
 
-Guidelines:
-- complexity: 0.9 to 1.3 (simple=0.9-1.0, average=1.0-1.1, complex=1.1-1.3)
-- condition: 0.85 to 1.1 (excellent=0.85-0.95, good=0.95-1.0, poor=1.0-1.1)
-- access: 0.9 to 1.1 (easy=0.9-0.95, normal=0.95-1.0, difficult=1.0-1.1)
-- materialQuality: 0.95 to 1.1 (basic=0.95-1.0, standard=1.0, high-end=1.0-1.1)
-- insights: 3-5 specific observations about the space
-- detectedIssues: true if any problems found
-- confidence: 70-95 based on photo quality and coverage
-- materials: List 5-10 key materials needed with realistic quantities and costs in GBP`;
+Ranges: complexity 0.9-1.3, condition 0.85-1.1, access 0.9-1.1, materialQuality 0.95-1.1, confidence 70-95. Give 3-5 insights, 5-10 materials with GBP costs.`;
 
-    // Prepare image messages
-    const imageMessages = images.slice(0, 5).map(img => ({
-      type: "image_url",
-      image_url: {
-        url: img.data,
-        detail: "auto"
-      }
-    }));
-
-    // Call OpenAI Vision API
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
-            ...imageMessages
-          ]
+    // OPTIMIZATION 3: Process batches in parallel
+    const batchPromises = imageBatches.map(async (batch) => {
+      const imageMessages = batch.map(img => ({
+        type: "image_url",
+        image_url: {
+          url: img.data,
+          detail: "high"  // Keep high for accuracy
         }
-      ],
-      max_tokens: 1000,
-      temperature: 0.3
+      }));
+
+      return await openai.chat.completions.create({
+        model: "gpt-4o-mini",  // Fast model
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: `Analyse ${jobType} project:` },
+              ...imageMessages
+            ]
+          }
+        ],
+        max_tokens: 800,  // Reduced from 1000 (faster)
+        temperature: 0.2   // Lower temp = faster, more consistent
+      });
     });
 
-    const analysisText = response.choices[0].message.content;
-    console.log('AI Response:', analysisText);
+    // Wait for all batches to complete
+    const batchResponses = await Promise.all(batchPromises);
 
-    // Parse AI response
-    let analysis;
-    try {
-      const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        analysis = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error('No JSON found in response');
-      }
-    } catch (parseError) {
-      console.error('Parse error:', parseError);
-      return res.status(500).json({ error: 'Failed to parse AI response' });
+    // OPTIMIZATION 4: Merge results from multiple batches
+    const allAnalyses = batchResponses.map(response => {
+      const text = response.choices[0].message.content;
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      return jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+    }).filter(Boolean);
+
+    if (allAnalyses.length === 0) {
+      throw new Error('No valid analysis results');
     }
+
+    // Average the results from multiple batches
+    const analysis = {
+      complexity: allAnalyses.reduce((sum, a) => sum + a.complexity, 0) / allAnalyses.length,
+      condition: allAnalyses.reduce((sum, a) => sum + a.condition, 0) / allAnalyses.length,
+      access: allAnalyses.reduce((sum, a) => sum + a.access, 0) / allAnalyses.length,
+      materialQuality: allAnalyses.reduce((sum, a) => sum + a.materialQuality, 0) / allAnalyses.length,
+      insights: [...new Set(allAnalyses.flatMap(a => a.insights || []))].slice(0, 5),
+      detectedIssues: allAnalyses.some(a => a.detectedIssues),
+      confidence: Math.round(allAnalyses.reduce((sum, a) => sum + (a.confidence || 75), 0) / allAnalyses.length),
+      materials: allAnalyses[0].materials || []  // Use first batch's materials
+    };
+
+    console.log('AI Analysis complete:', analysis);
 
     // Calculate overall adjustment
     const overallAdjustment = 
@@ -150,7 +164,7 @@ Guidelines:
       analysis.access * 
       analysis.materialQuality;
 
-    // Apply platform markup to materials (15% for supplier profit + platform fee)
+    // Apply platform markup to materials
     const PLATFORM_MARKUP = 1.15;
     const adjustedMaterials = (analysis.materials || []).map(material => ({
       ...material,
@@ -161,9 +175,9 @@ Guidelines:
     // Return formatted response
     res.json({
       adjustment: overallAdjustment,
-      confidence: analysis.confidence || 75,
-      insights: analysis.insights || [],
-      detectedIssues: analysis.detectedIssues || false,
+      confidence: analysis.confidence,
+      insights: analysis.insights,
+      detectedIssues: analysis.detectedIssues,
       materials: adjustedMaterials,
       factors: {
         complexity: ((analysis.complexity - 1) * 100).toFixed(1),
@@ -174,9 +188,9 @@ Guidelines:
     });
 
   } catch (error) {
-    console.error('Error analyzing photos:', error);
+    console.error('Error analysing photos:', error);
     res.status(500).json({ 
-      error: 'Failed to analyze photos',
+      error: 'Failed to analyse photos',
       message: error.message 
     });
   }
