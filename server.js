@@ -59,11 +59,9 @@ app.get('/', (req, res) => {
 });
 
 // Photo analysis endpoint
-// FASTEST Photo Analysis Endpoint
-// Uses GPT-4o (faster than 4o-mini for vision) with maximum optimizations
-
-// OPTIMIZED Photo Analysis Endpoint
-// Key optimization: Parallel processing + reduced token usage
+// Single GPT-4o call with 3 high-detail images
+// No batching, no mini model, no complexity - just clean and fast
+// ====================================================================
 
 app.post('/api/analyze-photos', async (req, res) => {
   try {
@@ -78,87 +76,77 @@ app.post('/api/analyze-photos', async (req, res) => {
     }
 
     console.log(`Analyzing ${images.length} photos for ${jobType}`);
+    const startTime = Date.now();
 
-    // OPTIMIZATION 1: Split images into batches for parallel processing
-    // Process 2-3 images at a time instead of all 5 sequentially
-    const batchSize = 3;
-    const imageBatches = [];
-    for (let i = 0; i < Math.min(images.length, 5); i += batchSize) {
-      imageBatches.push(images.slice(i, i + batchSize));
-    }
+    // Process 3 images with HIGH detail for 100% accuracy
+    const imageMessages = images.slice(0, 3).map(img => ({
+      type: "image_url",
+      image_url: {
+        url: img.data,
+        detail: "high"
+      }
+    }));
 
-    // OPTIMIZATION 2: Shorter, more focused prompt (fewer tokens = faster)
-    const systemPrompt = `Expert construction estimator. Return only JSON:
+    const prompt = `You are an expert construction, decoration, repair and renovation estimator. Analyse these photos of a ${jobType} project.
+
+Please evaluate and provide your assessment as JSON with this exact structure:
 {
   "complexity": 1.05,
   "condition": 0.95,
   "access": 1.0,
   "materialQuality": 1.0,
-  "insights": ["observation 1", "observation 2", "observation 3"],
+  "insights": ["insight 1", "insight 2", "insight 3"],
   "detectedIssues": false,
   "confidence": 85,
-  "materials": [{"item": "Paint", "quantity": 3, "unit": "tins", "estimatedCost": 45}]
+  "materials": [
+    {"item": "Paint (5L)", "quantity": 3, "unit": "tins", "estimatedCost": 45},
+    {"item": "Primer", "quantity": 2, "unit": "litres", "estimatedCost": 25}
+  ]
 }
 
-Ranges: complexity 0.9-1.3, condition 0.85-1.1, access 0.9-1.1, materialQuality 0.95-1.1, confidence 70-95. Give 3-5 insights, 5-10 materials with GBP costs.`;
+Guidelines:
+- complexity: 0.9 to 1.3 (simple=0.9-1.0, average=1.0-1.1, complex=1.1-1.3)
+- condition: 0.85 to 1.1 (excellent=0.85-0.95, good=0.95-1.0, poor=1.0-1.1)
+- access: 0.9 to 1.1 (easy=0.9-0.95, normal=0.95-1.0, difficult=1.0-1.1)
+- materialQuality: 0.95 to 1.1 (basic=0.95-1.0, standard=1.0, high-end=1.0-1.1)
+- insights: 3-5 specific observations about the space
+- detectedIssues: true if any problems found
+- confidence: 70-95 based on photo quality and coverage
+- materials: List 5-10 key materials needed with realistic quantities and costs in GBP`;
 
-    // OPTIMIZATION 3: Process batches in parallel
-    const batchPromises = imageBatches.map(async (batch) => {
-      const imageMessages = batch.map(img => ({
-        type: "image_url",
-        image_url: {
-          url: img.data,
-          detail: "high"  // Keep high for accuracy
+    // Single clean GPT-4o call
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            ...imageMessages
+          ]
         }
-      }));
-
-      return await openai.chat.completions.create({
-        model: "gpt-4o-mini",  // Fast model
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt
-          },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: `Analyze ${jobType} project:` },
-              ...imageMessages
-            ]
-          }
-        ],
-        max_tokens: 800,  // Reduced from 1000 (faster)
-        temperature: 0.2   // Lower temp = faster, more consistent
-      });
+      ],
+      max_tokens: 1000,
+      temperature: 0.3
     });
 
-    // Wait for all batches to complete
-    const batchResponses = await Promise.all(batchPromises);
+    const analysisText = response.choices[0].message.content;
+    const endTime = Date.now();
+    console.log(`✅ Analysis completed in ${((endTime - startTime) / 1000).toFixed(1)}s`);
 
-    // OPTIMIZATION 4: Merge results from multiple batches
-    const allAnalyses = batchResponses.map(response => {
-      const text = response.choices[0].message.content;
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      return jsonMatch ? JSON.parse(jsonMatch[0]) : null;
-    }).filter(Boolean);
-
-    if (allAnalyses.length === 0) {
-      throw new Error('No valid analysis results');
+    // Parse AI response
+    let analysis;
+    try {
+      const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        analysis = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('No JSON found in response');
+      }
+    } catch (parseError) {
+      console.error('Parse error:', parseError);
+      return res.status(500).json({ error: 'Failed to parse AI response' });
     }
-
-    // Average the results from multiple batches
-    const analysis = {
-      complexity: allAnalyses.reduce((sum, a) => sum + a.complexity, 0) / allAnalyses.length,
-      condition: allAnalyses.reduce((sum, a) => sum + a.condition, 0) / allAnalyses.length,
-      access: allAnalyses.reduce((sum, a) => sum + a.access, 0) / allAnalyses.length,
-      materialQuality: allAnalyses.reduce((sum, a) => sum + a.materialQuality, 0) / allAnalyses.length,
-      insights: [...new Set(allAnalyses.flatMap(a => a.insights || []))].slice(0, 5),
-      detectedIssues: allAnalyses.some(a => a.detectedIssues),
-      confidence: Math.round(allAnalyses.reduce((sum, a) => sum + (a.confidence || 75), 0) / allAnalyses.length),
-      materials: allAnalyses[0].materials || []  // Use first batch's materials
-    };
-
-    console.log('AI Analysis complete:', analysis);
 
     // Calculate overall adjustment
     const overallAdjustment = 
@@ -178,9 +166,9 @@ Ranges: complexity 0.9-1.3, condition 0.85-1.1, access 0.9-1.1, materialQuality 
     // Return formatted response
     res.json({
       adjustment: overallAdjustment,
-      confidence: analysis.confidence,
-      insights: analysis.insights,
-      detectedIssues: analysis.detectedIssues,
+      confidence: analysis.confidence || 75,
+      insights: analysis.insights || [],
+      detectedIssues: analysis.detectedIssues || false,
       materials: adjustedMaterials,
       factors: {
         complexity: ((analysis.complexity - 1) * 100).toFixed(1),
