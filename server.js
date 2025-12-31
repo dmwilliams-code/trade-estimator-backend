@@ -25,6 +25,15 @@ const connectDB = async () => {
 // Connect to database
 connectDB();
 
+// Daily Usage Schema for tracking global estimates
+const dailyUsageSchema = new mongoose.Schema({
+  date: { type: String, required: true, unique: true }, // Format: YYYY-MM-DD
+  totalEstimates: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const DailyUsage = mongoose.model('DailyUsage', dailyUsageSchema);
+
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -48,6 +57,65 @@ function hashPostcode(postcode) {
        .digest('hex')
        .substring(0, 16);
    }
+
+// Get or create today's usage record
+async function getTodayUsage() {
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+  
+  try {
+    let usage = await DailyUsage.findOne({ date: today });
+    
+    if (!usage) {
+      usage = await DailyUsage.create({ date: today, totalEstimates: 0 });
+      console.log(`📊 Created new usage record for ${today}`);
+    }
+    
+    return usage;
+  } catch (error) {
+    console.error('Error getting today usage:', error);
+    // Return a default object if DB is unavailable
+    return { date: today, totalEstimates: 0 };
+  }
+}
+
+// Check if global daily limit is reached
+async function checkGlobalLimit() {
+  const DAILY_LIMIT = 100;
+  
+  try {
+    const usage = await getTodayUsage();
+    
+    return {
+      limitReached: usage.totalEstimates >= DAILY_LIMIT,
+      current: usage.totalEstimates,
+      limit: DAILY_LIMIT,
+      remaining: Math.max(0, DAILY_LIMIT - usage.totalEstimates)
+    };
+  } catch (error) {
+    console.error('Error checking global limit:', error);
+    // If DB fails, allow request (fail open)
+    return { limitReached: false, current: 0, limit: DAILY_LIMIT, remaining: DAILY_LIMIT };
+  }
+}
+
+// Increment global usage counter
+async function incrementGlobalUsage() {
+  const today = new Date().toISOString().split('T')[0];
+  
+  try {
+    const usage = await DailyUsage.findOneAndUpdate(
+      { date: today },
+      { $inc: { totalEstimates: 1 } },
+      { new: true, upsert: true }
+    );
+    
+    console.log(`📈 Global usage: ${usage.totalEstimates}/100 estimates used today`);
+    return usage.totalEstimates;
+  } catch (error) {
+    console.error('Error incrementing global usage:', error);
+    return 0;
+  }
+}
 
 // Middleware
 app.use(cors());
@@ -301,6 +369,22 @@ function getCostReason(postcodeData, multiplier) {
 
 app.post('/api/search-contractors', async (req, res) => {
   try {
+        // Check global daily limit
+    const globalLimit = await checkGlobalLimit();
+    if (globalLimit.limitReached) {
+      console.log('⛔ Global daily limit reached');
+      return res.status(429).json({
+        error: 'Daily service limit reached',
+        message: 'Our service has reached its daily capacity due to high demand. Please try again tomorrow!',
+        limitReached: true,
+        current: globalLimit.current,
+        limit: globalLimit.limit
+      });
+    }
+    
+    // Increment global counter
+    await incrementGlobalUsage();
+
     const { jobType, location } = req.body;
 
     if (!jobType) {
@@ -722,6 +806,26 @@ app.get('/api/estimates', async (req, res) => {
     res.json({ estimates, count: estimates.length });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Get current usage stats
+app.get('/api/usage-stats', async (req, res) => {
+  try {
+    const globalLimit = await checkGlobalLimit();
+    const today = new Date().toISOString().split('T')[0];
+    
+    res.json({
+      date: today,
+      current: globalLimit.current,
+      limit: globalLimit.limit,
+      remaining: globalLimit.remaining,
+      limitReached: globalLimit.limitReached,
+      percentageUsed: ((globalLimit.current / globalLimit.limit) * 100).toFixed(1)
+    });
+  } catch (error) {
+    console.error('Error fetching usage stats:', error);
+    res.status(500).json({ error: 'Failed to fetch usage stats' });
   }
 });
 
