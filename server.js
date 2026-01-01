@@ -6,6 +6,9 @@ const OpenAI = require('openai');
 const { Client } = require('@googlemaps/google-maps-services-js');
 const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
+const validator = require('validator');
+const mongoSanitize = require('express-mongo-sanitize');
+const helmet = require('helmet');
 
 // MongoDB Connection
 const connectDB = async () => {
@@ -131,6 +134,12 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '10mb' }));
+app.use(mongoSanitize());
+
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable if causing CORS issues
+  crossOriginEmbedderPolicy: false
+}));
 
 // Rate limiter: Prevents abuse by limiting requests per IP
 // GDPR compliant: Legitimate interest (Article 6(1)(f))
@@ -194,8 +203,33 @@ app.post('/api/analyze-photos', photoAnalysisLimiter, async (req, res) => {
       return res.status(400).json({ error: 'No images provided' });
     }
 
-    if (images.length > 10) {
-      return res.status(400).json({ error: 'Maximum 10 images allowed' });
+    if (images.length > 3) {
+      return res.status(400).json({ error: 'Maximum 3 images allowed' });
+    }
+
+        // VALIDATION
+    if (!images || !Array.isArray(images)) {
+      return res.status(400).json({ error: 'Invalid images data' });
+    }
+
+    if (!jobType || typeof jobType !== 'string' || jobType.length > 200) {
+      return res.status(400).json({ error: 'Invalid job type' });
+    }
+
+    if (images.length === 0 || images.length > 3) {
+      return res.status(400).json({ error: 'Invalid number of images (1-3)' });
+    }
+
+    // Validate each image is a valid data URL
+    for (const img of images) {
+      if (!img.data || !img.data.startsWith('data:image/')) {
+        return res.status(400).json({ error: 'Invalid image format' });
+      }
+      
+      // Check image size (prevent huge uploads)
+      if (img.data.length > 10 * 1024 * 1024) { // 10MB limit
+        return res.status(400).json({ error: 'Image too large' });
+      }
     }
 
     console.log(`Analyzing ${images.length} photos for ${jobType}`);
@@ -301,13 +335,14 @@ Guidelines:
       }
     });
 
-  } catch (error) {
-    console.error('Error analyzing photos:', error);
-    res.status(500).json({ 
-      error: 'Failed to analyze photos',
-      message: error.message 
-    });
-  }
+  } 
+catch (error) {
+  console.error('Error analyzing photos:', error);
+  res.status(500).json({ 
+    error: 'Failed to analyze photos',
+    message: 'An unexpected error occurred. Please try again.'
+  });
+}
 });
 
 // Helper function to lookup UK postcode and get town/city with cost multiplier
@@ -733,7 +768,7 @@ res.json({
     console.error('Contractor search error:', error);
     res.status(500).json({ 
       error: 'Failed to search contractors',
-      message: error.message 
+      message: 'Unable to fetch contractors. Please try again.' 
     });
   }
 });
@@ -845,7 +880,7 @@ app.post('/api/save-estimate', async (req, res) => {
     console.error('❌ Error saving estimate:', error);
     res.status(500).json({ 
       error: 'Failed to save estimate',
-      message: error.message 
+      message: 'Unable to save your estimate. Please try again.'
     });
   }
 });
@@ -860,7 +895,7 @@ app.get('/api/estimates', async (req, res) => {
     
     res.json({ estimates, count: estimates.length });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch estimates' });
   }
 });
 
