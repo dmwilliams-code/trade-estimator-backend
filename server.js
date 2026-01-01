@@ -4,8 +4,8 @@ const express = require('express');
 const cors = require('cors');
 const OpenAI = require('openai');
 const { Client } = require('@googlemaps/google-maps-services-js');
-
 const mongoose = require('mongoose');
+const rateLimit = require('express-rate-limit');
 
 // MongoDB Connection
 const connectDB = async () => {
@@ -118,8 +118,63 @@ async function incrementGlobalUsage() {
 }
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://getestimateai.co.uk',
+    'https://www.getestimateai.co.uk',
+    'http://localhost:3000',  // For local development
+    'http://localhost:3001'   // For local development
+  ],
+  methods: ['GET', 'POST'],
+  credentials: true,
+  optionsSuccessStatus: 200
+}));
+
 app.use(express.json({ limit: '10mb' }));
+
+// Rate limiter: Prevents abuse by limiting requests per IP
+// GDPR compliant: Legitimate interest (Article 6(1)(f))
+// Stores IP + count for 60 seconds only
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute window
+  max: 5, // Maximum 5 requests per minute per IP
+  message: {
+    error: 'Too many requests',
+    message: 'Please wait a moment before trying again. Maximum 5 requests per minute.'
+  },
+  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+  legacyHeaders: false, // Disable `X-RateLimit-*` headers
+  // Skip rate limiting for health check
+  skip: (req) => req.path === '/',
+  // Custom key generator (uses IP address)
+  keyGenerator: (req) => {
+    // Get IP from various possible headers (for proxies/load balancers)
+    return req.ip || 
+           req.headers['x-forwarded-for']?.split(',')[0] || 
+           req.headers['x-real-ip'] || 
+           req.connection.remoteAddress;
+  }
+});
+
+const photoAnalysisLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 3, // Only 3 photo analysis requests per minute
+  message: {
+    error: 'Too many photo analysis requests',
+    message: 'Please wait before analyzing more photos. Maximum 3 analyses per minute.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    return req.ip || 
+           req.headers['x-forwarded-for']?.split(',')[0] || 
+           req.headers['x-real-ip'] || 
+           req.connection.remoteAddress;
+  }
+});
+
+// Apply rate limiter to all API routes
+app.use('/api/', apiLimiter);
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -131,7 +186,7 @@ app.get('/', (req, res) => {
 // No batching, no mini model, no complexity - just clean and fast
 // ====================================================================
 
-app.post('/api/analyze-photos', async (req, res) => {
+app.post('/api/analyze-photos', photoAnalysisLimiter, async (req, res) => {
   try {
     const { images, jobType } = req.body;
 
