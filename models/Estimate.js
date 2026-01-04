@@ -1,5 +1,6 @@
 // models/Estimate.js
 // ANONYMOUS VERSION - No Personal Data Collected
+// UPDATED: roomCounts → projectSize migration
 
 const mongoose = require('mongoose');
 
@@ -23,15 +24,14 @@ const estimateSchema = new mongoose.Schema({
   inputType: {
     type: String,
     required: true,
-    enum: ['room', 'sqm', 'unit']
+    enum: ['room', 'area', 'unit']  // Changed 'sqm' to 'area' to match frontend
   },
   
-  // For room-based jobs
-  roomCounts: {
-    small: { type: Number, default: 0 },
-    medium: { type: Number, default: 0 },
-    large: { type: Number, default: 0 },
-    extraLarge: { type: Number, default: 0 }
+  // UPDATED: Single project size field (replaces roomCounts)
+  projectSize: {
+    type: String,
+    enum: ['small', 'medium', 'large', 'extra-large'],
+    default: null
   },
   
   // For area/unit-based jobs
@@ -66,48 +66,28 @@ const estimateSchema = new mongoose.Schema({
     adjustment: Number,
     confidence: Number,
     insights: [String],
-    detectedIssues: Boolean,
-    materials: [{
-      item: String,
-      quantity: Number,
-      unit: String,
-      estimatedCost: Number
-    }]
+    detectedIssues: [String],  // Changed from Boolean to match frontend
+    materials: [String]        // Simplified to match frontend
   },
   
-  // Calculation Results
+  // Calculation Results - UPDATED to match frontend structure
   estimate: {
-    total: {
-      type: Number,
-      required: true
-    },
-    labour: {
-      type: Number,
-      required: true
-    },
-    materials: {
-      type: Number,
-      required: true
-    },
-    baseRate: Number,
-    quantity: Number,
-    unit: String,
+    min: Number,              // NEW: minimum estimate
+    max: Number,              // NEW: maximum estimate
+    baseCost: Number,         // NEW: base cost before multipliers
+    breakdown: [{             // NEW: itemized breakdown
+      item: String,
+      calculation: String,
+      subtotal: Number
+    }],
     photoEnhanced: {
       type: Boolean,
       default: false
-    },
-    confidence: {
-      type: Number,
-      default: 60
     }
   },
   
-  // Breakdown of multipliers applied
-  multipliers: {
-    quality: Number,
-    location: Number,
-    photo: Number
-  },
+  // Breakdown of multipliers applied - UPDATED to match frontend
+  multipliers: mongoose.Schema.Types.Mixed,  // Allow flexible structure from frontend
   
   // Contractors recommended (public business data - not personal)
   contractorsShown: [{
@@ -121,6 +101,7 @@ const estimateSchema = new mongoose.Schema({
   // ipAddress: REMOVED
   // userAgent: REMOVED
   // userLocation (actual postcode): REMOVED (using locationHash instead)
+  // roomCounts: REMOVED (replaced with projectSize)
   
 }, {
   timestamps: true // createdAt and updatedAt are fine (not personal by themselves)
@@ -130,14 +111,20 @@ const estimateSchema = new mongoose.Schema({
 estimateSchema.index({ createdAt: -1 }); // Sort by date
 estimateSchema.index({ category: 1, jobType: 1 }); // Filter by job type
 estimateSchema.index({ 'locationData.region': 1 }); // Filter by region
+estimateSchema.index({ projectSize: 1 }); // Filter by project size
 
-// Virtual for total number of rooms (calculated field)
-estimateSchema.virtual('totalRooms').get(function() {
-  if (this.inputType === 'room') {
-    return this.roomCounts.small + this.roomCounts.medium + 
-           this.roomCounts.large + this.roomCounts.extraLarge;
-  }
-  return null;
+// Virtual for easy display of project size
+estimateSchema.virtual('projectSizeDisplay').get(function() {
+  if (!this.projectSize) return null;
+  
+  const sizeMap = {
+    'small': 'Small',
+    'medium': 'Medium',
+    'large': 'Large',
+    'extra-large': 'Extra Large'
+  };
+  
+  return sizeMap[this.projectSize] || this.projectSize;
 });
 
 // Method to get a summary
@@ -145,8 +132,11 @@ estimateSchema.methods.getSummary = function() {
   return {
     id: this._id,
     job: this.jobName,
+    projectSize: this.projectSizeDisplay,
     region: this.locationData?.region || 'Unknown',
-    total: `£${this.estimate.total.toFixed(2)}`,
+    estimateRange: this.estimate?.min && this.estimate?.max 
+      ? `£${this.estimate.min.toLocaleString()} - £${this.estimate.max.toLocaleString()}`
+      : 'N/A',
     date: this.createdAt.toLocaleDateString()
   };
 };

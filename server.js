@@ -253,26 +253,23 @@ Please evaluate and provide your assessment as JSON with this exact structure:
   "access": 1.0,
   "materialQuality": 1.0,
   "insights": ["insight 1", "insight 2", "insight 3"],
-  "detectedIssues": false,
-  "confidence": 85,
-  "materials": [
-    {"item": "Paint (5L)", "quantity": 3, "unit": "tins", "estimatedCost": 45},
-    {"item": "Primer", "quantity": 2, "unit": "litres", "estimatedCost": 25}
-  ]
+  "detectedIssues": ["issue1", "issue2"],
+  "materials": ["material1", "material2"]
 }
 
-Guidelines:
-- complexity: 0.9 to 1.3 (simple=0.9-1.0, average=1.0-1.1, complex=1.1-1.3)
-- condition: 0.85 to 1.1 (excellent=0.85-0.95, good=0.95-1.0, poor=1.0-1.1)
-- access: 0.9 to 1.1 (easy=0.9-0.95, normal=0.95-1.0, difficult=1.0-1.1)
-- materialQuality: 0.95 to 1.1 (basic=0.95-1.0, standard=1.0, high-end=1.0-1.1)
-- insights: 3-5 specific observations about the space
-- detectedIssues: true if any problems found
-- confidence: 70-95 based on photo quality and coverage
-- materials: List 5-10 key materials needed with realistic quantities and costs in GBP`;
+Each multiplier should be between 0.7 (much easier/cheaper) and 1.5 (much harder/expensive):
+- complexity: Job difficulty (prep work, special skills needed)
+- condition: Current state (good = lower, poor = higher)
+- access: How difficult to reach/work on
+- materialQuality: What's currently there or needed
 
-    // Single clean GPT-4o call
-    const response = await openai.chat.completions.create({
+Insights should be specific, helpful observations about the space.
+DetectedIssues should note any visible problems that will affect cost.
+Materials should list what appears to be needed or present.
+
+Return ONLY valid JSON, no other text.`;
+
+    const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
@@ -287,385 +284,241 @@ Guidelines:
       temperature: 0.3
     });
 
-    const analysisText = response.choices[0].message.content;
-    const endTime = Date.now();
-    console.log(`✅ Analysis completed in ${((endTime - startTime) / 1000).toFixed(1)}s`);
-
-    // Parse AI response
+    const responseText = completion.choices[0].message.content.trim();
+    
     let analysis;
     try {
-      const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         analysis = JSON.parse(jsonMatch[0]);
       } else {
         throw new Error('No JSON found in response');
       }
     } catch (parseError) {
-      console.error('Parse error:', parseError);
-      return res.status(500).json({ error: 'Failed to parse AI response' });
+      console.error('JSON parse error:', parseError);
+      console.error('Raw response:', responseText);
+      
+      return res.status(500).json({
+        error: 'Failed to parse AI response',
+        fallback: true,
+        adjustment: 1.0,
+        confidence: 0,
+        insights: ['AI analysis encountered an error. Using standard estimate.']
+      });
     }
 
-    // Calculate overall adjustment
-    const overallAdjustment = 
-      analysis.complexity * 
-      analysis.condition * 
-      analysis.access * 
-      analysis.materialQuality;
+    const avgMultiplier = (
+      (analysis.complexity || 1) +
+      (analysis.condition || 1) +
+      (analysis.access || 1) +
+      (analysis.materialQuality || 1)
+    ) / 4;
 
-    // Apply platform markup to materials
-    const PLATFORM_MARKUP = 1.15;
-    const adjustedMaterials = (analysis.materials || []).map(material => ({
-      ...material,
-      baseCost: material.estimatedCost,
-      estimatedCost: Math.round(material.estimatedCost * PLATFORM_MARKUP * 100) / 100
-    }));
+    const confidence = Math.round((1 - Math.abs(1 - avgMultiplier)) * 100);
 
-    // Return formatted response
-    res.json({
-      adjustment: overallAdjustment,
-      confidence: analysis.confidence || 75,
+    const result = {
+      adjustment: Math.round(avgMultiplier * 100) / 100,
+      confidence: Math.max(0, Math.min(100, confidence)),
       insights: analysis.insights || [],
-      detectedIssues: analysis.detectedIssues || false,
-      materials: adjustedMaterials,
-      factors: {
-        complexity: ((analysis.complexity - 1) * 100).toFixed(1),
-        condition: ((analysis.condition - 1) * 100).toFixed(1),
-        access: ((analysis.access - 1) * 100).toFixed(1),
-        materialQuality: ((analysis.materialQuality - 1) * 100).toFixed(1)
+      detectedIssues: analysis.detectedIssues || [],
+      materials: analysis.materials || [],
+      breakdown: {
+        complexity: analysis.complexity || 1,
+        condition: analysis.condition || 1,
+        access: analysis.access || 1,
+        materialQuality: analysis.materialQuality || 1
+      }
+    };
+
+    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`✅ Analysis complete in ${duration}s - Adjustment: ${result.adjustment}x (${result.confidence}% confidence)`);
+
+    res.json(result);
+
+  } catch (error) {
+    console.error('Photo analysis error:', error);
+    
+    res.status(500).json({
+      error: 'Photo analysis failed',
+      message: 'Unable to analyze photos. Please try again.',
+      fallback: true,
+      adjustment: 1.0,
+      confidence: 0,
+      insights: ['Analysis unavailable. Using standard estimate.']
+    });
+  }
+});
+
+// Postcode validation and geocoding
+async function validateAndGeocodePostcode(postcode) {
+  if (!postcode || typeof postcode !== 'string') {
+    return { valid: false, error: 'Invalid postcode format' };
+  }
+
+  const cleanPostcode = postcode.trim().toUpperCase();
+  
+  const ukPostcodeRegex = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}$/i;
+  if (!ukPostcodeRegex.test(cleanPostcode)) {
+    return { valid: false, error: 'Invalid UK postcode format' };
+  }
+
+  try {
+    const response = await googlePlacesClient.geocode({
+      params: {
+        address: cleanPostcode + ', UK',
+        key: process.env.GOOGLE_PLACES_API_KEY,
+        region: 'uk'
       }
     });
 
-  } 
-catch (error) {
-  console.error('Error analyzing photos:', error);
-  res.status(500).json({ 
-    error: 'Failed to analyze photos',
-    message: 'An unexpected error occurred. Please try again.'
-  });
-}
-});
+    if (response.data.results.length === 0) {
+      return { valid: false, error: 'Postcode not found' };
+    }
 
-// Helper function to lookup UK postcode and get town/city with cost multiplier
-async function lookupPostcode(postcode) {
-  try {
-    const cleanPostcode = postcode.trim().replace(/\s+/g, '');
-    const response = await fetch(`https://api.postcodes.io/postcodes/${cleanPostcode}`);
+    const result = response.data.results[0];
     
-    if (!response.ok) {
-      return null;
+    const ukComponent = result.address_components.find(
+      comp => comp.types.includes('country') && comp.short_name === 'GB'
+    );
+    
+    if (!ukComponent) {
+      return { valid: false, error: 'Not a UK postcode' };
     }
-    
-    const data = await response.json();
-    
-    if (data.status === 200 && data.result) {
-      const specificLocation = 
-        data.result.parish_ward || 
-        data.result.admin_ward ||
-        data.result.admin_district ||
-        data.result.postcode.split(' ')[0];
-      
-      // Calculate cost multiplier based on real data
-      const costMultiplier = calculateCostMultiplier(data.result);
-      
-      return {
-        city: specificLocation,
-        region: data.result.region,
-        district: data.result.admin_district,
-        country: data.result.country,
-        latitude: data.result.latitude,
-        longitude: data.result.longitude,
-        costMultiplier: costMultiplier,
-        costReason: getCostReason(data.result, costMultiplier)
-      };
-    }
-    
-    return null;
+
+    return {
+      valid: true,
+      formattedAddress: result.formatted_address,
+      location: result.geometry.location,
+      placeId: result.place_id
+    };
   } catch (error) {
-    console.error('Postcode lookup error:', error.message);
-    return null;
+    console.error('Geocoding error:', error);
+    return { valid: false, error: 'Failed to validate postcode' };
   }
 }
 
-// Calculate cost multiplier based on postcode data
-function calculateCostMultiplier(postcodeData) {
-  // London (region check)
-  if (postcodeData.region === 'London') {
-    return 1.5;
+// Location-based cost analysis
+function analyzeLocationCost(addressComponents) {
+  let region = 'Unknown';
+  let costMultiplier = 1.0;
+  let costReason = 'Standard UK rates';
+
+  const city = addressComponents.find(c => c.types.includes('postal_town'))?.long_name;
+  const adminArea = addressComponents.find(c => c.types.includes('administrative_area_level_2'))?.long_name;
+
+  if (city?.toLowerCase().includes('london')) {
+    region = 'London';
+    costMultiplier = 1.5;
+    costReason = 'Higher London rates (materials, labour, permits)';
+  } else if (['Oxford', 'Cambridge', 'Brighton', 'Bristol', 'Bath'].some(c => city?.includes(c))) {
+    region = city;
+    costMultiplier = 1.25;
+    costReason = 'Higher costs in affluent city';
+  } else if (['Manchester', 'Birmingham', 'Leeds', 'Liverpool', 'Newcastle', 'Sheffield', 'Edinburgh', 'Glasgow'].some(c => city?.includes(c))) {
+    region = city;
+    costMultiplier = 1.0;
+    costReason = 'Average rates for major city';
+  } else if (city) {
+    region = city;
+    costMultiplier = 0.85;
+    costReason = 'Lower costs outside major cities';
+  } else if (adminArea) {
+    region = adminArea;
+    costMultiplier = 0.85;
+    costReason = 'Regional rates';
   }
-  
-  // Use average income/house prices as proxy (from parliamentary constituency)
-  // High-value areas based on region and district
-  const highCostRegions = ['South East', 'East of England'];
-  const highCostDistricts = [
-    'Oxford', 'Cambridge', 'Brighton and Hove', 'Bath and North East Somerset',
-    'Windsor and Maidenhead', 'Wokingham', 'Surrey', 'Buckinghamshire',
-    'Hertfordshire', 'Bristol', 'Edinburgh', 'St Albans', 'Winchester',
-    'Guildford', 'Elmbridge', 'Mole Valley', 'Waverley'
-  ];
-  
-  // Check if in high cost district
-  if (highCostDistricts.some(district => 
-    postcodeData.admin_district?.includes(district) || 
-    postcodeData.parliamentary_constituency?.includes(district)
-  )) {
-    return 1.25;
-  }
-  
-  // Check if in high cost region (but not specific district)
-  if (highCostRegions.includes(postcodeData.region)) {
-    return 1.15;
-  }
-  
-  // Low cost areas (based on lower average incomes)
-  const lowCostRegions = ['North East', 'Yorkshire and The Humber', 'North West', 'Wales'];
-  const lowCostDistricts = [
-    'Burnley', 'Blackpool', 'Stoke', 'Kingston upon Hull', 'Middlesbrough',
-    'Hartlepool', 'Blackburn', 'Bradford', 'Barnsley', 'Doncaster',
-    'Rotherham', 'Wakefield', 'Sunderland', 'Gateshead', 'South Tyneside',
-    'Blaenau Gwent', 'Merthyr Tydfil', 'Neath Port Talbot'
-  ];
-  
-  // Check if in low cost district
-  if (lowCostDistricts.some(district => 
-    postcodeData.admin_district?.includes(district)
-  )) {
-    return 0.85;
-  }
-  
-  // Check if in lower cost region (but not specific low cost district)
-  if (lowCostRegions.includes(postcodeData.region)) {
-    return 0.92;
-  }
-  
-  // Scotland (excluding Edinburgh)
-  if (postcodeData.country === 'Scotland' && !postcodeData.admin_district?.includes('Edinburgh')) {
-    return 0.95;
-  }
-  
-  // Default average
-  return 1.0;
+
+  return { region, costMultiplier, costReason };
 }
 
-// Get human-readable reason for cost multiplier
-function getCostReason(postcodeData, multiplier) {
-  if (multiplier === 1.5) return 'London area';
-  if (multiplier === 1.25) return 'High-value area';
-  if (multiplier === 1.15) return 'South East/East England';
-  if (multiplier === 0.85) return 'Lower cost area';
-  if (multiplier === 0.92) return 'Northern England/Wales';
-  if (multiplier === 0.95) return 'Scotland';
-  return 'Standard pricing area';
-}
-
+// Search contractors endpoint
 app.post('/api/search-contractors', async (req, res) => {
   try {
-        // Check global daily limit
-    const globalLimit = await checkGlobalLimit();
-    if (globalLimit.limitReached) {
-      console.log('⛔ Global daily limit reached');
-      return res.status(429).json({
-        error: 'Daily service limit reached',
-        message: 'Our service has reached its daily capacity due to high demand. Please try again tomorrow!',
-        limitReached: true,
-        current: globalLimit.current,
-        limit: globalLimit.limit
-      });
-    }
-    
-    // Increment global counter
-    await incrementGlobalUsage();
-
-    const { jobType, location } = req.body;
+    const { jobType, userLocation } = req.body;
 
     if (!jobType) {
       return res.status(400).json({ error: 'Job type is required' });
     }
 
-    if (!location) {
+    if (!userLocation) {
       return res.status(400).json({ error: 'Location is required' });
     }
 
-    // Map our job types to search queries
-    const jobTypeMapping = {
-        'extension': ['home extension builder', 'house extension contractor', 'building extension'],
-        'loft-conversion': ['loft conversion specialist', 'attic conversion', 'loft builder'],
-        'new-roof': ['roofing contractor', 'roofer', 'roof specialist'],
-        'driveway': ['driveway installer', 'driveway contractor', 'paving specialist'],
-        'painting-room': ['painter decorator', 'interior painter', 'painting contractor'],
-        'wallpapering': ['wallpaper installer', 'wallpapering specialist', 'decorator'],
-        'floor-sanding': ['floor sanding service', 'floor refinishing', 'wood floor specialist'],
-        'bathroom-install': ['bathroom fitter', 'bathroom installer', 'bathroom renovation'],
-        'boiler-replacement': ['boiler installer', 'heating engineer', 'boiler specialist'],
-        'radiator-install': ['heating engineer', 'central heating installer', 'plumber'],
-        'rewire': ['electrician rewiring', 'electrical rewiring', 'house rewire electrician'],
-        'consumer-unit': ['electrician', 'electrical contractor', 'fuse box electrician'],
-        'ev-charger': ['EV charger installer', 'electric car charger', 'EV charging point installer'],
-        'garden-landscaping': ['garden landscaper', 'landscaping contractor', 'garden designer'],
-        'window-cleaning': ['window cleaner', 'window cleaning service', 'professional window cleaner']
-    };
+    const postcodeValidation = await validateAndGeocodePostcode(userLocation);
+    
+    if (!postcodeValidation.valid) {
+      return res.status(400).json({ 
+        error: 'Invalid postcode',
+        message: postcodeValidation.error 
+      });
+    }
 
-const searchTerms = jobTypeMapping[jobType] || [jobType];
-const searchQuery = searchTerms[0];
+    const geocodingResponse = await googlePlacesClient.geocode({
+      params: {
+        address: userLocation + ', UK',
+        key: process.env.GOOGLE_PLACES_API_KEY
+      }
+    });
 
-// Map job types to Google Places business types
-const jobTypeToGoogleTypes = {
-  // Construction
-  'extension': ['general_contractor', 'home_builder', 'construction_company'],
-  'loft-conversion': ['general_contractor', 'roofing_contractor', 'home_builder'],
-  'new-roof': ['roofing_contractor', 'general_contractor'],
-  'driveway': ['general_contractor', 'paving_contractor'],
-  
-  // Decoration
-  'painting-room': ['painter', 'painting_contractor'],
-  'wallpapering': ['painter', 'interior_decorator'],
-  'floor-sanding': ['flooring_contractor', 'flooring_store'],
-  
-  // Plumbing
-  'bathroom-install': ['plumber', 'bathroom_remodeler'],
-  'boiler-replacement': ['plumber', 'heating_contractor'],
-  'radiator-install': ['plumber', 'heating_contractor'],
-  
-  // Electrical
-  'rewire': ['electrician'],
-  'consumer-unit': ['electrician'],
-  'ev-charger': ['electrician', 'car_repair'],
+    if (geocodingResponse.data.results.length === 0) {
+      return res.status(400).json({ error: 'Location not found' });
+    }
 
-    // Outdoor
-  'garden-landscaping': ['landscaping', 'landscape_designer', 'lawn_care'],
-  'window-cleaning': ['window_cleaning_service', 'cleaning_service']
-};
+    const location = geocodingResponse.data.results[0].geometry.location;
+    const addressComponents = geocodingResponse.data.results[0].address_components;
+    
+    const locationDetails = analyzeLocationCost(addressComponents);
 
-// Get relevant types for this job, default to general_contractor
-const relevantTypes = jobTypeToGoogleTypes[jobType] || ['general_contractor'];
-const typesString = relevantTypes.join('|');
+    const searchQuery = `${jobType} contractor`;
+    const fullQuery = `${searchQuery} near ${userLocation}`;
 
-console.log(`Using Google Places types: ${typesString}`);
+    console.log(`Searching: "${fullQuery}"`);
 
-// Handle UK postcodes - look them up via API
-let searchLocation = location;
-let locationDetails = null;
-
-// Check if it looks like a UK postcode (e.g., "BA14 8UZ" or "SW1A1AA")
-const postcodePattern = /^[A-Z]{1,2}[0-9]{1,2}[A-Z]?\s?[0-9][A-Z]{2}$/i;
-
-if (postcodePattern.test(location.trim())) {
-  console.log(`Detected postcode format: ${location}`);
-  locationDetails = await lookupPostcode(location);
-
-  console.log('=== POSTCODE LOOKUP RESULT ===');
-console.log('Location input:', location);
-console.log('Location details:', locationDetails);
-console.log('Cost multiplier:', locationDetails?.costMultiplier);
-  
-if (locationDetails) {
-  // Use the town/city from the postcode lookup
-  searchLocation = locationDetails.city;
-  
-  // If it's still too generic (a county), add UK to help Google Places
-  const genericLocations = ['Wiltshire', 'Somerset', 'Devon', 'Cornwall', 'Yorkshire', 'Lancashire'];
-  if (genericLocations.some(loc => searchLocation.includes(loc))) {
-    searchLocation = `${searchLocation} UK`;
-  }
-  
-  console.log(`Converted postcode ${location} to: ${searchLocation} (${locationDetails.district}, ${locationDetails.region})`);
-  } else {
-    console.log(`Postcode lookup failed, using postcode as-is: ${location}`);
-    // Keep original postcode if lookup fails
-  }
-} else {
-  console.log(`Not a postcode format, using as city name: ${searchLocation}`);
-}
-
-console.log(`Final search location: ${searchLocation}`);
-
-
-
- 
-    const fullQuery = `${searchQuery} in ${searchLocation}`;
-
-    console.log(`Searching for: ${fullQuery}`);
-
-// Get coordinates from postcode if available
-let searchParams;
-
-if (locationDetails && locationDetails.latitude && locationDetails.longitude) {
-  // Use nearby search with coordinates and radius
-  const radiusMeters = 16000; // 10 miles = ~16km
-  
-  console.log(`Searching within ${radiusMeters/1000}km of coordinates: ${locationDetails.latitude}, ${locationDetails.longitude}`);
-  
-  searchParams = {
-    location: `${locationDetails.latitude},${locationDetails.longitude}`,
-    radius: radiusMeters,
+const response = await googlePlacesClient.placesNearby({
+  params: {
+    location: location,
+    radius: 25000,
     keyword: searchQuery,
-    key: process.env.GOOGLE_PLACES_API_KEY,
-    type: typesString
-  };
-  
-  const response = await googlePlacesClient.placesNearby({
-    params: searchParams
-  });
-  
-  searchResults = response;
-} else {
-  // Fallback to text search if no coordinates
-  console.log(`No coordinates available, using text search: ${fullQuery}`);
-  
-  const response = await googlePlacesClient.textSearch({
-    params: {
-      query: fullQuery,
-      key: process.env.GOOGLE_PLACES_API_KEY,
-      type: typesString
-    }
-  });
-  
-  searchResults = response;
-}
+    type: 'general_contractor',
+    key: process.env.GOOGLE_PLACES_API_KEY
+  }
+});
 
-const response = searchResults;
+const MIN_RATING = 4.0;
+const MIN_REVIEWS = 10;
 
-    if (response.data.status !== 'OK' && response.data.status !== 'ZERO_RESULTS') {
-      throw new Error(`Google Places API error: ${response.data.status}`);
-    }
-
-// Try strict filters first, then relax if needed
-const STRICT_MIN_RATING = 4.0;
-const STRICT_MIN_REVIEWS = 5;
 const RELAXED_MIN_RATING = 3.5;
 const RELAXED_MIN_REVIEWS = 3;
 
-const strictContractors = response.data.results
+let contractors = response.data.results
   .filter(place => {
     const rating = place.rating || 0;
     const reviews = place.user_ratings_total || 0;
-    return rating >= STRICT_MIN_RATING && reviews >= STRICT_MIN_REVIEWS;
+    return rating >= MIN_RATING && reviews >= MIN_REVIEWS;
   })
- .map(place => ({
-  name: place.name,
-  address: place.formatted_address || place.vicinity || 'Address not available',
-  rating: place.rating || 0,
-  totalReviews: place.user_ratings_total || 0,
-  phoneNumber: place.formatted_phone_number || place.international_phone_number,
+  .map(place => ({
+    name: place.name,
+    address: place.formatted_address || place.vicinity || 'Address not available',
+    rating: place.rating || 0,
+    totalReviews: place.user_ratings_total || 0,
+    phoneNumber: place.formatted_phone_number || place.international_phone_number,
     website: place.website,
     location: place.geometry.location,
     placeId: place.place_id,
     openNow: place.opening_hours?.open_now,
     priceLevel: place.price_level,
     types: place.types,
-    qualityVerified: true // Meets strict criteria
+    qualityVerified: true
   }));
 
-// If we have at least 3 strict results, use them
-let contractors = strictContractors;
 let filtersUsed = {
-  minimumRating: STRICT_MIN_RATING,
-  minimumReviews: STRICT_MIN_REVIEWS,
+  minimumRating: MIN_RATING,
+  minimumReviews: MIN_REVIEWS,
   relaxed: false
 };
 
-// Otherwise, relax the filters
-if (strictContractors.length < 3) {
-  console.log(`Only ${strictContractors.length} contractors with strict filters, relaxing criteria...`);
+if (contractors.length === 0) {
+  console.log('No contractors found with strict filters. Trying relaxed criteria...');
   
   const relaxedContractors = response.data.results
     .filter(place => {
@@ -775,7 +628,7 @@ res.json({
 
 const Estimate = require('./models/Estimate');
 
-// Save estimate endpoint
+// Save estimate endpoint - UPDATED to handle projectSize
 app.post('/api/save-estimate', async (req, res) => {
   try {
     const {
@@ -783,7 +636,7 @@ app.post('/api/save-estimate', async (req, res) => {
       jobType,
       jobName,
       inputType,
-      roomCounts,
+      projectSize,      // NEW: Single project size field
       areaQuantity,
       userLocation,      // Original postcode (from frontend)
       locationData,
@@ -802,6 +655,31 @@ app.post('/api/save-estimate', async (req, res) => {
       });
     }
 
+    // Validate projectSize for room-based jobs
+    if (inputType === 'room' && !projectSize) {
+      return res.status(400).json({
+        error: 'Project size is required for room-based jobs',
+        required: ['projectSize']
+      });
+    }
+
+    // Validate projectSize enum
+    const validSizes = ['small', 'medium', 'large', 'extra-large'];
+    if (projectSize && !validSizes.includes(projectSize)) {
+      return res.status(400).json({
+        error: 'Invalid project size',
+        validSizes: validSizes
+      });
+    }
+
+    // Validate areaQuantity for area-based jobs
+    if ((inputType === 'area' || inputType === 'unit') && (!areaQuantity || areaQuantity <= 0)) {
+      return res.status(400).json({
+        error: 'Area quantity is required for area/unit-based jobs',
+        required: ['areaQuantity']
+      });
+    }
+
     // Hash the postcode (ANONYMIZATION)
     const locationHash = hashPostcode(userLocation);
     
@@ -817,9 +695,9 @@ app.post('/api/save-estimate', async (req, res) => {
       jobName,
       inputType,
       
-      // Input details
-      roomCounts: roomCounts || { small: 0, medium: 0, large: 0, extraLarge: 0 },
-      areaQuantity,
+      // Input details - UPDATED
+      projectSize: projectSize || null,  // Store single project size for room-based jobs
+      areaQuantity: areaQuantity || null, // Store quantity for area/unit-based jobs
       
       // Location (ANONYMIZED)
       locationHash: locationHash,  // Hashed, not actual postcode
@@ -866,6 +744,10 @@ app.post('/api/save-estimate', async (req, res) => {
     const savedEstimate = await newEstimate.save();
     
     console.log('💾 Estimate saved (anonymous):', savedEstimate._id);
+    console.log('   Category:', savedEstimate.category);
+    console.log('   Job Type:', savedEstimate.jobType);
+    console.log('   Input Type:', savedEstimate.inputType);
+    console.log('   Project Size:', savedEstimate.projectSize);
     console.log('   Region:', savedEstimate.locationData?.region);
     console.log('   Location hash:', savedEstimate.locationHash);
 
@@ -878,6 +760,18 @@ app.post('/api/save-estimate', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error saving estimate:', error);
+    
+    // Provide detailed error for validation failures
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: Object.keys(error.errors).map(key => ({
+          field: key,
+          message: error.errors[key].message
+        }))
+      });
+    }
+    
     res.status(500).json({ 
       error: 'Failed to save estimate',
       message: 'Unable to save your estimate. Please try again.'
