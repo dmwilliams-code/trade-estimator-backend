@@ -768,6 +768,9 @@ app.post('/api/save-estimate', async (req, res) => {
     // Save to database
     const savedEstimate = await newEstimate.save();
     
+    // Increment global usage counter
+    await incrementGlobalUsage();
+    
     console.log('💾 Estimate saved (anonymous):', savedEstimate._id);
     console.log('   Category:', savedEstimate.category);
     console.log('   Job Type:', savedEstimate.jobType);
