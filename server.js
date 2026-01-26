@@ -653,6 +653,10 @@ res.json({
 
 const Estimate = require('./models/Estimate');
 
+// Import and mount leads routes
+const leadsRouter = require('./routes/leadsRoutes');
+app.use('/api/leads', leadsRouter);
+
 // Save estimate endpoint - UPDATED to handle projectSize
 app.post('/api/save-estimate', async (req, res) => {
   try {
