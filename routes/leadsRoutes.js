@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Lead = require('../models/LeadModel');
+const { sendWelcomeEmail } = require('../services/emailService');
 
 // ============================================
 // POST /api/leads - Create new lead
@@ -12,10 +13,10 @@ router.post('/', async (req, res) => {
       category,
       jobType,
       jobName,
-      userLocation,
       quality,
       hasPhotos,
-      timestamp
+      timestamp,
+      estimateData  // NEW: Optional estimate data to include in email
     } = req.body;
 
     // Validation
@@ -56,7 +57,12 @@ router.post('/', async (req, res) => {
       hasPhotos: savedLead.hasPhotos
     });
 
-    // Return success response
+    // Send welcome email asynchronously (don't wait for it)
+    sendWelcomeEmail(savedLead.toObject(), estimateData)
+      .then(() => console.log('📧 Welcome email sent to:', email))
+      .catch(err => console.error('❌ Email failed (non-blocking):', err.message));
+
+    // Return success response immediately (don't wait for email)
     res.status(201).json({
       success: true,
       leadId: savedLead._id,
