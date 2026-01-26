@@ -21,7 +21,7 @@ async function sendWelcomeEmail(leadData, estimateData = null) {
     const textContent = buildWelcomeEmailText(leadData, estimateData);
     
     const result = await resend.emails.send({
-      from: 'EstimateAI <support@getestimateai.co.uk>',
+      from: 'EstimateAI <estimates@getestimateai.co.uk>',
       to: [email],
       subject: `Your ${jobName} Estimate is Ready`,
       html: htmlContent,
