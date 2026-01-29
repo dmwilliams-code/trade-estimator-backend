@@ -1,21 +1,34 @@
 // services/emailService.js
-// Email service using Resend (works over HTTPS - no SMTP port blocking)
+// Email service using Namecheap Private Email via SMTP
 
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 
-// Validate API key
-if (!process.env.RESEND_API_KEY) {
-  console.error('❌ RESEND_API_KEY environment variable is not set!');
-  console.error('Please add RESEND_API_KEY to your environment variables');
+// Validate SMTP credentials
+if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+  console.error('❌ SMTP credentials not set!');
+  console.error('Required: SMTP_HOST, SMTP_USER, SMTP_PASS');
 }
 
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Create SMTP transporter
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT) || 587,
+  secure: false, // use TLS (STARTTLS)
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  },
+  tls: {
+    ciphers: 'SSLv3',
+    rejectUnauthorized: false
+  }
+});
 
 // Log on startup
-console.log('📧 Email service initialized (Resend)');
-console.log('   API Key present:', !!process.env.RESEND_API_KEY);
-console.log('   API Key prefix:', process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.substring(0, 5) + '...' : 'NOT SET');
+console.log('📧 Email service initialized (SMTP)');
+console.log('   SMTP Host:', process.env.SMTP_HOST || 'NOT SET');
+console.log('   SMTP User:', process.env.SMTP_USER || 'NOT SET');
+console.log('   SMTP Port:', process.env.SMTP_PORT || 587);
 
 /**
  * Send welcome email with estimate details to new lead
@@ -30,34 +43,22 @@ async function sendWelcomeEmail(leadData, estimateData = null) {
     const htmlContent = buildWelcomeEmailHTML(leadData, estimateData);
     const textContent = buildWelcomeEmailText(leadData, estimateData);
     
-    console.log('📧 Calling Resend API...');
+    console.log('📧 Sending via SMTP...');
     
-    // Send email - DKIM verified, SPF warning is OK
-    const { data, error } = await resend.emails.send({
-      from: 'EstimateAI <estimates@getestimateai.co.uk>',
-      to: [email],
+    // Send email
+    const info = await transporter.sendMail({
+      from: `"EstimateAI" <${process.env.SMTP_USER}>`,
+      to: email,
       subject: `Your ${jobName} Estimate is Ready`,
-      html: htmlContent,
-      text: textContent
+      text: textContent,
+      html: htmlContent
     });
     
-    // Check for errors
-    if (error) {
-      console.error('❌ Resend API error:', error);
-      throw new Error(`Resend API error: ${JSON.stringify(error)}`);
-    }
-    
-    // Validate response
-    if (!data || !data.id) {
-      console.error('⚠️ Invalid Resend response:', { data, error });
-      throw new Error('Resend did not return a valid message ID');
-    }
-    
     console.log('✅ Email sent successfully!');
-    console.log('   Message ID:', data.id);
+    console.log('   Message ID:', info.messageId);
     console.log('   Recipient:', email);
     
-    return data;
+    return info;
     
   } catch (error) {
     console.error('❌ Failed to send welcome email');
@@ -268,6 +269,15 @@ Unsubscribe: ${process.env.SMTP_USER}
 © 2026 EstimateAI
   `;
 }
+
+// Verify connection on startup
+transporter.verify(function(error, success) {
+  if (error) {
+    console.error('❌ SMTP connection failed:', error.message);
+  } else {
+    console.log('✅ SMTP server is ready to send emails');
+  }
+});
 
 module.exports = {
   sendWelcomeEmail
