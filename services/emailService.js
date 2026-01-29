@@ -1,21 +1,30 @@
 // services/emailService.js
-// Email service using Resend
+// Email service using Namecheap Private Email via SMTP
 
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 
-// Validate API key
-if (!process.env.RESEND_API_KEY) {
-  console.error('❌ RESEND_API_KEY environment variable is not set!');
-  console.error('Please add RESEND_API_KEY to your environment variables');
+// Validate SMTP credentials
+if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+  console.error('❌ SMTP credentials not set!');
+  console.error('Required: SMTP_HOST, SMTP_USER, SMTP_PASS');
 }
 
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Create SMTP transporter
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT) || 465,
+  secure: true, // use SSL
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
+});
 
 // Log on startup
-console.log('📧 Email service initialized');
-console.log('   API Key present:', !!process.env.RESEND_API_KEY);
-console.log('   API Key prefix:', process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.substring(0, 5) + '...' : 'NOT SET');
+console.log('📧 Email service initialized (SMTP)');
+console.log('   SMTP Host:', process.env.SMTP_HOST || 'NOT SET');
+console.log('   SMTP User:', process.env.SMTP_USER || 'NOT SET');
+console.log('   SMTP Port:', process.env.SMTP_PORT || 465);
 
 /**
  * Send welcome email with estimate details to new lead
@@ -30,34 +39,22 @@ async function sendWelcomeEmail(leadData, estimateData = null) {
     const htmlContent = buildWelcomeEmailHTML(leadData, estimateData);
     const textContent = buildWelcomeEmailText(leadData, estimateData);
     
-    console.log('📧 Calling Resend API...');
+    console.log('📧 Sending via SMTP...');
     
     // Send email
-    const { data, error } = await resend.emails.send({
-      from: 'EstimateAI <estimates@getestimateai.co.uk>',
-      to: [email],
+    const info = await transporter.sendMail({
+      from: `"EstimateAI" <${process.env.SMTP_USER}>`,
+      to: email,
       subject: `Your ${jobName} Estimate is Ready`,
-      html: htmlContent,
-      text: textContent
+      text: textContent,
+      html: htmlContent
     });
     
-    // Check for errors
-    if (error) {
-      console.error('❌ Resend API error:', error);
-      throw new Error(`Resend API error: ${JSON.stringify(error)}`);
-    }
-    
-    // Validate response
-    if (!data || !data.id) {
-      console.error('⚠️ Invalid Resend response:', { data, error });
-      throw new Error('Resend did not return a valid message ID');
-    }
-    
     console.log('✅ Email sent successfully!');
-    console.log('   Message ID:', data.id);
+    console.log('   Message ID:', info.messageId);
     console.log('   Recipient:', email);
     
-    return data;
+    return info;
     
   } catch (error) {
     console.error('❌ Failed to send welcome email');
@@ -134,10 +131,10 @@ function buildWelcomeEmailHTML(leadData, estimateData) {
     
     <div style="border-top: 1px solid #e5e7eb; margin-top: 40px; padding-top: 20px; text-align: center;">
       <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-        Questions? <a href="mailto:support@getestimateai.co.uk" style="color: #0d9488;">support@getestimateai.co.uk</a>
+        Questions? <a href="mailto:${process.env.SMTP_USER}" style="color: #0d9488;">${process.env.SMTP_USER}</a>
       </p>
       <p style="margin: 10px 0 0 0; color: #9ca3af; font-size: 12px;">
-        <a href="mailto:support@getestimateai.co.uk?subject=Unsubscribe" style="color: #9ca3af;">Unsubscribe</a>
+        <a href="mailto:${process.env.SMTP_USER}?subject=Unsubscribe" style="color: #9ca3af;">Unsubscribe</a>
       </p>
     </div>
     
@@ -184,12 +181,21 @@ Ensure you have a detailed written quote with all costs included.
 
 Get another estimate: https://getestimateai.co.uk
 
-Questions? Contact us at support@getestimateai.co.uk
-Unsubscribe: support@getestimateai.co.uk
+Questions? Contact us at ${process.env.SMTP_USER}
+Unsubscribe: ${process.env.SMTP_USER}
 
 © 2026 EstimateAI
   `;
 }
+
+// Verify connection on startup
+transporter.verify(function(error, success) {
+  if (error) {
+    console.error('❌ SMTP connection failed:', error.message);
+  } else {
+    console.log('✅ SMTP server is ready to send emails');
+  }
+});
 
 module.exports = {
   sendWelcomeEmail
