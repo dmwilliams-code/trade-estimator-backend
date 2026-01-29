@@ -58,9 +58,18 @@ router.post('/', async (req, res) => {
     });
 
     // Send welcome email asynchronously (don't wait for it)
+    console.log('📤 Attempting to send welcome email to:', email);
     sendWelcomeEmail(savedLead.toObject(), estimateData)
-      .then(() => console.log('📧 Welcome email sent to:', email))
-      .catch(err => console.error('❌ Email failed (non-blocking):', err.message));
+      .then((result) => {
+        console.log('📧 Welcome email sent successfully!');
+        console.log('   Email ID:', result.id);
+        console.log('   Recipient:', email);
+      })
+      .catch(err => {
+        console.error('❌ Email sending failed!');
+        console.error('   Error:', err.message);
+        console.error('   Full error:', err);
+      });
 
     // Return success response immediately (don't wait for email)
     res.status(201).json({
