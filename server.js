@@ -154,15 +154,8 @@ const apiLimiter = rateLimit({
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
   // Skip rate limiting for health check
-  skip: (req) => req.path === '/',
-  // Custom key generator (uses IP address)
-  keyGenerator: (req) => {
-    // Get IP from various possible headers (for proxies/load balancers)
-    return req.ip || 
-           req.headers['x-forwarded-for']?.split(',')[0] || 
-           req.headers['x-real-ip'] || 
-           req.connection.remoteAddress;
-  }
+  skip: (req) => req.path === '/'
+  // Using default keyGenerator which handles IPv6 correctly
 });
 
 const photoAnalysisLimiter = rateLimit({
@@ -173,13 +166,8 @@ const photoAnalysisLimiter = rateLimit({
     message: 'Please wait before analyzing more photos. Maximum 3 analyses per minute.'
   },
   standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.ip || 
-           req.headers['x-forwarded-for']?.split(',')[0] || 
-           req.headers['x-real-ip'] || 
-           req.connection.remoteAddress;
-  }
+  legacyHeaders: false
+  // Using default keyGenerator which handles IPv6 correctly
 });
 
 // Apply rate limiter to all API routes
