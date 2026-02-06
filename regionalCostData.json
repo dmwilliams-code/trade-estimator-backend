@@ -1,0 +1,536 @@
+{
+  "baseRates": {
+    "boiler-replacement": {
+      "name": "Boiler Replacement",
+      "base": 2500,
+      "category": "plumbing"
+    },
+    "bathroom-renovation": {
+      "name": "Bathroom Renovation",
+      "base": 6500,
+      "category": "plumbing"
+    },
+    "kitchen-renovation": {
+      "name": "Kitchen Renovation",
+      "base": 12000,
+      "category": "general"
+    },
+    "full-rewire": {
+      "name": "Full House Rewire",
+      "base": 4800,
+      "category": "electrical"
+    },
+    "interior-painting": {
+      "name": "Interior Painting (per room)",
+      "base": 450,
+      "category": "decoration"
+    },
+    "ev-charger": {
+      "name": "EV Charger Installation",
+      "base": 950,
+      "category": "electrical"
+    }
+  },
+  "regions": [
+    {
+      "slug": "london-central",
+      "name": "Central London",
+      "fullName": "Central London (Westminster, Chelsea, City)",
+      "multiplier": 1.55,
+      "tier": "Tier 1 (Prime)",
+      "regionalInsights": "Central London commands the UK's highest home improvement costs due to ULEZ charges (£12.50/day for non-compliant vehicles), premium parking permits (£150-300/day for trade vehicles), and intense competition for skilled labour. Westminster and Chelsea contractors factor in congestion delays, limited material storage space, and the premium expected by high-net-worth homeowners. Material logistics require careful planning with restricted delivery windows.",
+      "population": "1.2 million",
+      "avgPropertyValue": "£1,200,000"
+    },
+    {
+      "slug": "london-greater",
+      "name": "Greater London",
+      "fullName": "Greater London (Croydon, Enfield, Bromley)",
+      "multiplier": 1.35,
+      "tier": "Tier 2 (London)",
+      "regionalInsights": "Greater London boroughs like Croydon and Enfield maintain elevated costs due to proximity to central zones, though slightly reduced from prime areas. Contractors still navigate ULEZ boundaries, moderate parking fees, and strong demand from London's commuter belt. Travel times between jobs remain significant, and material costs reflect London supplier premiums despite being outside Zone 1-2.",
+      "population": "8 million",
+      "avgPropertyValue": "£550,000"
+    },
+    {
+      "slug": "birmingham",
+      "name": "Birmingham",
+      "fullName": "Birmingham",
+      "multiplier": 1.15,
+      "tier": "Tier 4 (Urban Major)",
+      "regionalInsights": "Birmingham's status as the UK's second city drives moderate cost increases above the national baseline. The city's extensive urban area creates longer travel times between jobs, while recent HS2 development and urban regeneration have increased demand for skilled trades. Material suppliers serve the broader Midlands region from Birmingham hubs, keeping logistics competitive.",
+      "population": "1.14 million",
+      "avgPropertyValue": "£245,000"
+    },
+    {
+      "slug": "manchester",
+      "name": "Manchester",
+      "fullName": "Manchester",
+      "multiplier": 1.15,
+      "tier": "Tier 4 (Urban Major)",
+      "regionalInsights": "Manchester's booming property market and Northern Powerhouse investment have elevated construction costs. High demand for renovations in gentrifying areas like Ancoats and Northern Quarter increases competition for quality tradespeople. The city's compact urban core means efficient job scheduling, though traffic congestion during peak hours impacts daily rates.",
+      "population": "550,000",
+      "avgPropertyValue": "£255,000"
+    },
+    {
+      "slug": "glasgow",
+      "name": "Glasgow",
+      "fullName": "Glasgow",
+      "multiplier": 1.15,
+      "tier": "Tier 4 (Urban Major)",
+      "regionalInsights": "Scotland's largest city maintains above-average costs due to strong demand in the West End and Merchant City areas. Scottish building regulations can differ from England, requiring specialist knowledge. Material costs reflect transport from central UK hubs, while skilled trades command premium rates due to competition with Edinburgh's market.",
+      "population": "635,000",
+      "avgPropertyValue": "£185,000"
+    },
+    {
+      "slug": "liverpool",
+      "name": "Liverpool",
+      "fullName": "Liverpool",
+      "multiplier": 1.15,
+      "tier": "Tier 4 (Urban Major)",
+      "regionalInsights": "Liverpool's urban renewal and waterfront regeneration drive steady demand for home improvements. The city's compact size allows contractors to serve multiple jobs daily, though popular areas like Baltic Triangle and Georgian Quarter command higher rates. Port access keeps some material costs competitive compared to inland cities.",
+      "population": "500,000",
+      "avgPropertyValue": "£195,000"
+    },
+    {
+      "slug": "leeds",
+      "name": "Leeds",
+      "fullName": "Leeds",
+      "multiplier": 1.15,
+      "tier": "Tier 4 (Urban Major)",
+      "regionalInsights": "Leeds combines Yorkshire's largest city premium with strong commercial and residential development. The financial district's growth increases demand for skilled trades, while areas like Chapel Allerton and Roundhay see competitive bidding for quality contractors. M1 corridor access facilitates efficient material delivery from national distributors.",
+      "population": "800,000",
+      "avgPropertyValue": "£240,000"
+    },
+    {
+      "slug": "sheffield",
+      "name": "Sheffield",
+      "fullName": "Sheffield",
+      "multiplier": 1.15,
+      "tier": "Tier 4 (Urban Major)",
+      "regionalInsights": "Sheffield's hilly terrain and diverse neighbourhoods create varied pricing. Contractors factor in challenging access to properties in areas like Crookes and Broomhill. The city's industrial heritage means abundant local suppliers, though skilled trades for period property renovations command premium rates in suburbs like Ecclesall and Dore.",
+      "population": "585,000",
+      "avgPropertyValue": "£215,000"
+    },
+    {
+      "slug": "edinburgh",
+      "name": "Edinburgh",
+      "fullName": "Edinburgh",
+      "multiplier": 1.15,
+      "tier": "Tier 4 (Urban Major)",
+      "regionalInsights": "Scotland's capital commands high rates due to New Town conservation requirements and strong demand in Stockbridge and Morningside. Listed building consents add complexity and cost to many projects. Contractors compete with commercial work from the financial sector, driving up day rates. Material transport from Glasgow and beyond adds logistics costs.",
+      "population": "525,000",
+      "avgPropertyValue": "£320,000"
+    },
+    {
+      "slug": "bristol",
+      "name": "Bristol",
+      "fullName": "Bristol",
+      "multiplier": 1.15,
+      "tier": "Tier 4 (Urban Major)",
+      "regionalInsights": "Bristol's thriving tech sector and desirable Clifton and Redland areas create strong renovation demand. The city's hills and Victorian housing stock require specialist skills for complex projects. Proximity to the M4/M5 junction allows competitive material pricing, though skilled trades are in high demand across both residential and commercial sectors.",
+      "population": "465,000",
+      "avgPropertyValue": "£380,000"
+    },
+    {
+      "slug": "cardiff",
+      "name": "Cardiff",
+      "fullName": "Cardiff",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Cardiff's mid-tier pricing reflects Wales' capital status without the pressure of larger English cities. Regeneration in Cardiff Bay and Pontcanna drives renovation activity. Welsh building regulations and bilingual requirements add minimal cost. Contractors benefit from manageable city sizes and M4 access for materials from Bristol and Swansea hubs.",
+      "population": "365,000",
+      "avgPropertyValue": "£255,000"
+    },
+    {
+      "slug": "belfast",
+      "name": "Belfast",
+      "fullName": "Belfast",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Northern Ireland's capital maintains moderate costs despite being the region's largest city. Victorian housing in South Belfast and newer developments in Titanic Quarter drive demand. Ferry logistics for some materials from GB add minimal costs, while local supplier networks keep most items competitive. Skilled trades are readily available at reasonable rates.",
+      "population": "345,000",
+      "avgPropertyValue": "£180,000"
+    },
+    {
+      "slug": "leicester",
+      "name": "Leicester",
+      "fullName": "Leicester",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Leicester's central England location and M1/M69 access provide excellent material logistics. The city's compact urban core allows efficient contractor scheduling. Growing areas like Stoneygate and Clarendon Park see steady renovation activity. Skilled trades are competitively priced due to proximity to Birmingham and Nottingham labour markets.",
+      "population": "355,000",
+      "avgPropertyValue": "£235,000"
+    },
+    {
+      "slug": "nottingham",
+      "name": "Nottingham",
+      "fullName": "Nottingham",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Nottingham combines student-driven rental renovations with upmarket areas like West Bridgford and Mapperley. University and hospital sectors create year-round demand for trades. The city's Victorian and Edwardian housing stock requires period-appropriate skills, while M1 proximity ensures competitive material costs from East Midlands distribution centres.",
+      "population": "330,000",
+      "avgPropertyValue": "£225,000"
+    },
+    {
+      "slug": "newcastle",
+      "name": "Newcastle",
+      "fullName": "Newcastle upon Tyne",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Newcastle's Quayside regeneration and Jesmond property market drive steady improvement activity. As the North East's commercial hub, contractors balance residential and commercial work. The city's relative isolation from major motorway networks adds modest material transport costs, though local supplier networks are well-established and competitive.",
+      "population": "300,000",
+      "avgPropertyValue": "£205,000"
+    },
+    {
+      "slug": "coventry",
+      "name": "Coventry",
+      "fullName": "Coventry",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Coventry's central Midlands location and excellent motorway connections (M6, M69, M42) enable cost-effective material delivery. The city's post-war rebuilding means less period property complexity than comparable cities. University expansion and automotive sector provide consistent trade demand. Competitive pricing due to proximity to Birmingham and Leicester labour pools.",
+      "population": "345,000",
+      "avgPropertyValue": "£240,000"
+    },
+    {
+      "slug": "southampton",
+      "name": "Southampton",
+      "fullName": "Southampton",
+      "multiplier": 1.25,
+      "tier": "Tier 3 (South East)",
+      "regionalInsights": "Southampton's South Coast location and proximity to expensive Hampshire villages elevate costs above mid-tier cities. The port city attracts London commuters, driving up property values in areas like Bassett and Chilworth. Contractors compete with Portsmouth and Winchester markets. M27 congestion can impact scheduling, while maritime climate requires specific weatherproofing expertise.",
+      "population": "255,000",
+      "avgPropertyValue": "£285,000"
+    },
+    {
+      "slug": "portsmouth",
+      "name": "Portsmouth",
+      "fullName": "Portsmouth",
+      "multiplier": 1.25,
+      "tier": "Tier 3 (South East)",
+      "regionalInsights": "Portsmouth's island geography creates unique logistics challenges, with Portsea Island's limited road access causing congestion. Naval heritage means many period properties in Southsea and Old Portsmouth require specialist conservation work. South East England labour rates apply, while ferry access for some materials adds minimal costs. Competition with Southampton market keeps contractors in demand.",
+      "population": "215,000",
+      "avgPropertyValue": "£270,000"
+    },
+    {
+      "slug": "reading",
+      "name": "Reading",
+      "fullName": "Reading",
+      "multiplier": 1.25,
+      "tier": "Tier 3 (South East)",
+      "regionalInsights": "Reading's Thames Valley location and tech sector wealth drive strong renovation demand. As a major London commuter hub (30 minutes to Paddington), property values in Caversham and Tilehurst command premium trades. M4 corridor access facilitates excellent material logistics. Contractors charge rates reflecting South East competition, with strong demand for quality finishes.",
+      "population": "175,000",
+      "avgPropertyValue": "£385,000"
+    },
+    {
+      "slug": "brighton",
+      "name": "Brighton",
+      "fullName": "Brighton & Hove",
+      "multiplier": 1.25,
+      "tier": "Tier 3 (South East)",
+      "regionalInsights": "Brighton's Regency heritage and coastal location create unique pricing dynamics. Conservation areas in Kemptown and Hove require specialist skills for period properties. The city's desirability and limited space drive high property values. A23 corridor links to London markets. Marine environments demand specific materials and weatherproofing, while strong demand keeps quality trades booked months ahead.",
+      "population": "290,000",
+      "avgPropertyValue": "£425,000"
+    },
+    {
+      "slug": "milton-keynes",
+      "name": "Milton Keynes",
+      "fullName": "Milton Keynes",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Milton Keynes' planned grid layout enables efficient contractor travel between jobs. The city's modern housing stock (post-1960s) reduces complexity compared to period properties elsewhere. M1 junction access provides excellent material logistics from national distributors. Growing population and new developments create steady work, with rates reflecting competitive Buckinghamshire-Bedfordshire market.",
+      "population": "230,000",
+      "avgPropertyValue": "£320,000"
+    },
+    {
+      "slug": "northampton",
+      "name": "Northampton",
+      "fullName": "Northampton",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Northampton's central England position and M1 access make it a logistics hub with competitive material costs. The town's mix of Victorian terraces and modern estates provides varied work for contractors. Proximity to Milton Keynes and Leicester creates a competitive labour market. Recent urban expansion drives consistent renovation and new-build finishing demand.",
+      "population": "225,000",
+      "avgPropertyValue": "£265,000"
+    },
+    {
+      "slug": "luton",
+      "name": "Luton",
+      "fullName": "Luton",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Luton's proximity to London (30 miles) creates moderate cost pressure, though not reaching South East premiums. M1 and airport access provide excellent material logistics. The town's diverse housing stock from Victorian terraces to modern developments supports varied trade work. Competitive with St Albans and Stevenage markets, contractors balance London overspill demand with local rates.",
+      "population": "215,000",
+      "avgPropertyValue": "£310,000"
+    },
+    {
+      "slug": "wolverhampton",
+      "name": "Wolverhampton",
+      "fullName": "Wolverhampton",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Wolverhampton's Black Country heritage and proximity to Birmingham create a competitive trades market. The city benefits from M6/M54 access for materials from Midlands hubs. Victorian and Edwardian housing in areas like Tettenhall requires period skills, while urban regeneration drives new project types. Labour rates reflect West Midlands conurbation pricing.",
+      "population": "265,000",
+      "avgPropertyValue": "£210,000"
+    },
+    {
+      "slug": "derby",
+      "name": "Derby",
+      "fullName": "Derby",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Derby's industrial heritage and central Midlands location support efficient contractor operations. A38/A50 access to M1 ensures competitive material delivery. The city's mix of Victorian terraces in areas like Darley Abbey and modern estates provides steady work. Automotive and aerospace sectors create skilled labour competition, maintaining reasonable but not premium rates.",
+      "population": "260,000",
+      "avgPropertyValue": "£225,000"
+    },
+    {
+      "slug": "plymouth",
+      "name": "Plymouth",
+      "fullName": "Plymouth",
+      "multiplier": 1.0,
+      "tier": "Tier 6 (Baseline)",
+      "regionalInsights": "Plymouth's South West location creates longer material transport routes from central UK distribution hubs. However, the city's relative isolation reduces labour competition, keeping contractor rates at baseline. Naval heritage and coastal properties require specific expertise for weatherproofing. A38 provides sole motorway link, making local supplier relationships crucial for cost-effective projects.",
+      "population": "265,000",
+      "avgPropertyValue": "£245,000"
+    },
+    {
+      "slug": "aberdeen",
+      "name": "Aberdeen",
+      "fullName": "Aberdeen",
+      "multiplier": 1.15,
+      "tier": "Tier 4 (Urban Major)",
+      "regionalInsights": "Aberdeen's oil industry heritage creates unique pricing dynamics with skilled trades commanding high rates during boom periods. Scottish building regulations apply, requiring specialist knowledge. Granite city construction presents specific challenges for period properties. Distance from central Scotland hubs adds material transport costs, while North Sea climate demands robust weatherproofing specifications.",
+      "population": "200,000",
+      "avgPropertyValue": "£195,000"
+    },
+    {
+      "slug": "bournemouth",
+      "name": "Bournemouth",
+      "fullName": "Bournemouth",
+      "multiplier": 1.25,
+      "tier": "Tier 3 (South East)",
+      "regionalInsights": "Bournemouth's coastal desirability and retiree demographic drive quality renovation demand. Victorian and Edwardian clifftop properties require specialist skills and access equipment. South Coast location means London commuter influence extends here, elevating contractor rates. A31/M27 access supports material logistics, while marine environment necessitates premium weatherproofing and corrosion-resistant materials.",
+      "population": "200,000",
+      "avgPropertyValue": "£325,000"
+    },
+    {
+      "slug": "norwich",
+      "name": "Norwich",
+      "fullName": "Norwich",
+      "multiplier": 1.0,
+      "tier": "Tier 6 (Baseline)",
+      "regionalInsights": "Norwich's East Anglian location creates moderate material transport costs from Midlands distributors. The city's relative isolation from major motorways (A11/A47) means strong local supplier networks have developed. Medieval city heritage includes many period properties requiring conservation expertise. Skilled trades are competitive at baseline rates due to limited competition from neighbouring cities.",
+      "population": "145,000",
+      "avgPropertyValue": "£265,000"
+    },
+    {
+      "slug": "swindon",
+      "name": "Swindon",
+      "fullName": "Swindon",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Swindon's M4 corridor location between London and Bristol creates efficient material logistics. The town's rapid expansion means predominantly modern housing with less period property complexity. Proximity to Oxford and Reading creates moderate labour cost pressure. Growing tech and distribution sectors provide steady employment for trades at competitive mid-tier rates.",
+      "population": "185,000",
+      "avgPropertyValue": "£275,000"
+    },
+    {
+      "slug": "swansea",
+      "name": "Swansea",
+      "fullName": "Swansea",
+      "multiplier": 1.0,
+      "tier": "Tier 6 (Baseline)",
+      "regionalInsights": "Swansea's South Wales location benefits from M4 corridor access while maintaining baseline pricing. Bay regeneration and Mumbles demand drive renovation activity in premium areas. Welsh building regulations apply with minimal cost impact. The city's size supports competitive trades at baseline rates, with material costs reasonable due to Cardiff and Bristol supplier proximity.",
+      "population": "245,000",
+      "avgPropertyValue": "£215,000"
+    },
+    {
+      "slug": "southend-on-sea",
+      "name": "Southend-on-Sea",
+      "fullName": "Southend-on-Sea",
+      "multiplier": 1.25,
+      "tier": "Tier 3 (South East)",
+      "regionalInsights": "Southend's Thames Estuary location and London commuter demand (45 mins to Liverpool Street) drive South East pricing. Coastal properties in Thorpe Bay and Westcliff require marine-grade materials and weatherproofing. A127 corridor connects to London markets, enabling competitive material sourcing. Victorian seafront heritage demands conservation expertise for period renovations.",
+      "population": "295,000",
+      "avgPropertyValue": "£310,000"
+    },
+    {
+      "slug": "middlesbrough",
+      "name": "Middlesbrough",
+      "fullName": "Middlesbrough",
+      "multiplier": 1.0,
+      "tier": "Tier 6 (Baseline)",
+      "regionalInsights": "Middlesbrough's Teesside location creates baseline pricing with A19/A66 access for material delivery from northern hubs. The town's industrial heritage means straightforward Victorian housing stock without extensive conservation requirements. Local trades operate at competitive baseline rates. Growing urban regeneration around the riverside provides steady work for contractors.",
+      "population": "140,000",
+      "avgPropertyValue": "£145,000"
+    },
+    {
+      "slug": "sunderland",
+      "name": "Sunderland",
+      "fullName": "Sunderland",
+      "multiplier": 1.0,
+      "tier": "Tier 6 (Baseline)",
+      "regionalInsights": "Sunderland's North East location maintains baseline pricing despite coastal position. A19 corridor provides material access from regional distributors. The city's Victorian and Edwardian terraces are typically straightforward renovations. Roker and Seaburn seafront properties require weatherproofing consideration. Local trades compete at baseline rates with limited pressure from Newcastle market.",
+      "population": "175,000",
+      "avgPropertyValue": "£160,000"
+    },
+    {
+      "slug": "warrington",
+      "name": "Warrington",
+      "fullName": "Warrington",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Warrington's strategic M6/M62 junction position creates excellent material logistics. The town sits between Liverpool and Manchester labour markets, creating moderate cost pressure. Mix of Victorian terraces and modern estates supports varied trade work. Skilled contractors can serve multiple North West cities, maintaining competitive mid-tier rates.",
+      "population": "210,000",
+      "avgPropertyValue": "£220,000"
+    },
+    {
+      "slug": "huddersfield",
+      "name": "Huddersfield",
+      "fullName": "Huddersfield",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Huddersfield's Pennine location creates access challenges in some areas, with hills impacting material delivery. M62 corridor access supports logistics from Yorkshire and Lancashire. The town's mill heritage means period conversions require specialist skills. Proximity to Leeds and Manchester creates moderate labour competition, maintaining mid-tier pricing.",
+      "population": "160,000",
+      "avgPropertyValue": "£180,000"
+    },
+    {
+      "slug": "peterborough",
+      "name": "Peterborough",
+      "fullName": "Peterborough",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Peterborough's A1(M) East Coast mainline position provides excellent material logistics. The city's rapid growth creates consistent new-build finishing and renovation demand. Proximity to Cambridge (30 miles) creates moderate cost pressure from spillover demand. Mix of Victorian city centre and modern estates supports diverse contractor work at competitive mid-tier rates.",
+      "population": "200,000",
+      "avgPropertyValue": "£245,000"
+    },
+    {
+      "slug": "oxford",
+      "name": "Oxford",
+      "fullName": "Oxford",
+      "multiplier": 1.25,
+      "tier": "Tier 3 (South East)",
+      "regionalInsights": "Oxford's university heritage and South East wealth create premium pricing. Conservation areas in Jericho and North Oxford require specialist period property expertise. London commuter demand (60 min to Paddington) elevates property values. M40 corridor supports material logistics. College and commercial work competes for skilled trades, maintaining high day rates year-round.",
+      "population": "155,000",
+      "avgPropertyValue": "£480,000"
+    },
+    {
+      "slug": "slough",
+      "name": "Slough",
+      "fullName": "Slough",
+      "multiplier": 1.25,
+      "tier": "Tier 3 (South East)",
+      "regionalInsights": "Slough's proximity to Heathrow and London (20 miles) drives South East pricing despite the town's commercial focus. M4/M25 access provides excellent material logistics but also creates congestion. Contractors charge rates reflecting Berkshire and West London competition. Growing residential development and business park conversions create steady demand for trades.",
+      "population": "150,000",
+      "avgPropertyValue": "£360,000"
+    },
+    {
+      "slug": "york",
+      "name": "York",
+      "fullName": "York",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "York's historic city status creates unique dynamics with extensive conservation areas requiring specialist expertise. Medieval and Georgian properties demand period-appropriate skills and materials. A64/A1(M) access supports logistics, while tourism and heritage sectors maintain steady contractor demand. Skilled trades command moderate premiums for conservation work, though not reaching major city levels.",
+      "population": "210,000",
+      "avgPropertyValue": "£290,000"
+    },
+    {
+      "slug": "blackpool",
+      "name": "Blackpool",
+      "fullName": "Blackpool",
+      "multiplier": 1.0,
+      "tier": "Tier 6 (Baseline)",
+      "regionalInsights": "Blackpool's coastal location and tourism economy support baseline contractor rates. Victorian guest house conversions and seafront properties drive renovation activity. M55 motorway access provides material logistics from North West hubs. Marine environment requires specific weatherproofing and corrosion resistance. Seasonal tourism creates variable demand patterns for trades throughout the year.",
+      "population": "140,000",
+      "avgPropertyValue": "£165,000"
+    },
+    {
+      "slug": "dundee",
+      "name": "Dundee",
+      "fullName": "Dundee",
+      "multiplier": 1.05,
+      "tier": "Tier 5 (Urban Mid)",
+      "regionalInsights": "Dundee's east Scotland location creates moderate material transport costs from central belt. Scottish building regulations apply throughout. The city's waterfront regeneration and university expansion drive renovation demand. Skilled trades operate at mid-tier rates without the premium pressure of Edinburgh or Aberdeen. A90 corridor supports logistics from Perth and Angus suppliers.",
+      "population": "150,000",
+      "avgPropertyValue": "£165,000"
+    },
+    {
+      "slug": "cambridge",
+      "name": "Cambridge",
+      "fullName": "Cambridge",
+      "multiplier": 1.25,
+      "tier": "Tier 3 (South East)",
+      "regionalInsights": "Cambridge's university prestige and Silicon Fen tech wealth create premium market dynamics. Conservation areas around colleges demand specialist heritage skills. London commuter demand (50 min to King's Cross) drives high property values in Newnham and Trumpington. M11 corridor supports excellent material logistics. College and commercial sectors compete heavily for skilled trades, maintaining premium rates.",
+      "population": "145,000",
+      "avgPropertyValue": "£525,000"
+    },
+    {
+      "slug": "ipswich",
+      "name": "Ipswich",
+      "fullName": "Ipswich",
+      "multiplier": 1.0,
+      "tier": "Tier 6 (Baseline)",
+      "regionalInsights": "Ipswich's East Anglian location maintains baseline pricing with A12/A14 access for materials from Eastern region hubs. The town's Victorian and Edwardian terraces provide straightforward renovation projects. Waterfront regeneration drives new development work. Local trades operate at competitive baseline rates, with limited pressure from Cambridge and Norwich markets.",
+      "population": "135,000",
+      "avgPropertyValue": "£250,000"
+    },
+    {
+      "slug": "birkenhead",
+      "name": "Birkenhead",
+      "fullName": "Birkenhead",
+      "multiplier": 1.0,
+      "tier": "Tier 6 (Baseline)",
+      "regionalInsights": "Birkenhead's Wirral location across from Liverpool maintains baseline rates despite proximity to the city. Victorian terraces and waterfront areas provide steady renovation work. Mersey tunnels can add travel time but contractors serve both Wirral and Liverpool markets. M53 access supports material delivery from North West hubs. Competitive baseline pricing reflects regional market dynamics.",
+      "population": "145,000",
+      "avgPropertyValue": "£175,000"
+    },
+    {
+      "slug": "telford",
+      "name": "Telford",
+      "fullName": "Telford",
+      "multiplier": 1.0,
+      "tier": "Tier 6 (Baseline)",
+      "regionalInsights": "Telford's 1960s new town status means predominantly modern housing with minimal period property complexity. M54 junction access provides excellent material logistics from Midlands distributors. The town's planned layout enables efficient contractor scheduling. Baseline rates reflect competitive Shropshire market, with proximity to Birmingham and Wolverhampton creating limited cost pressure.",
+      "population": "175,000",
+      "avgPropertyValue": "£215,000"
+    },
+    {
+      "slug": "gloucester",
+      "name": "Gloucester",
+      "fullName": "Gloucester",
+      "multiplier": 1.0,
+      "tier": "Tier 6 (Baseline)",
+      "regionalInsights": "Gloucester's M5 corridor position supports cost-effective material delivery from South West and Midlands hubs. The city's docks regeneration and cathedral quarter create varied renovation projects. Victorian terraces and modern estates provide steady contractor work. Baseline rates apply despite proximity to Bristol and Cheltenham, with competitive local trades market.",
+      "population": "130,000",
+      "avgPropertyValue": "£255,000"
+    },
+    {
+      "slug": "watford",
+      "name": "Watford",
+      "fullName": "Watford",
+      "multiplier": 1.25,
+      "tier": "Tier 3 (South East)",
+      "regionalInsights": "Watford's Metropolitan Line connection to London (20 minutes to Baker Street) drives South East premium pricing. M1/M25 access creates excellent material logistics but also attracts London contractor rates. The town's Victorian and Edwardian areas in Nascot Wood require period skills. Competition with North London and Hertfordshire markets maintains elevated day rates.",
+      "population": "100,000",
+      "avgPropertyValue": "£425,000"
+    },
+    {
+      "slug": "colchester",
+      "name": "Colchester",
+      "fullName": "Colchester",
+      "multiplier": 1.0,
+      "tier": "Tier 6 (Baseline)",
+      "regionalInsights": "Colchester's Essex location maintains baseline pricing with A12 access to London and Ipswich. Roman heritage and garrison town status create diverse property types from Georgian terraces to modern developments. University expansion drives student accommodation renovations. Local trades operate at baseline rates, though some London influence exists in commuter villages.",
+      "population": "120,000",
+      "avgPropertyValue": "£290,000"
+    },
+    {
+      "slug": "bath",
+      "name": "Bath",
+      "fullName": "Bath",
+      "multiplier": 1.25,
+      "tier": "Tier 3 (South East)",
+      "regionalInsights": "Bath's UNESCO World Heritage status creates unique premium dynamics. Georgian architecture throughout the city requires specialist conservation skills and Bath stone expertise. Strict planning controls and listed building consents add complexity and cost. M4 corridor access supports logistics. High property values and wealthy homeowner base drive premium contractor rates, with period-appropriate craftsmanship commanding top prices.",
+      "population": "95,000",
+      "avgPropertyValue": "£450,000"
+    }
+  ]
+}

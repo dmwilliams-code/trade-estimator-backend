@@ -9,6 +9,12 @@ const rateLimit = require('express-rate-limit');
 const validator = require('validator');
 const mongoSanitize = require('express-mongo-sanitize');
 const helmet = require('helmet');
+const { google } = require('googleapis');
+const fs = require('fs');
+const path = require('path');
+
+// Load regional data for Google Indexing API
+const regionalData = require('./regionalCostData.json');
 
 // MongoDB Connection
 const connectDB = async () => {
@@ -832,6 +838,190 @@ app.get('/api/usage-stats', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch usage stats' });
   }
 });
+
+// ============================================
+// GOOGLE INDEXING API - SEO Brief 5
+// ============================================
+// Environment variables needed:
+// - REINDEX_SECRET: Secret key to protect the endpoint
+// - GOOGLE_SERVICE_ACCOUNT_PATH: Path to service account JSON key
+
+const REINDEX_SECRET = process.env.REINDEX_SECRET;
+const SERVICE_ACCOUNT_PATH = process.env.GOOGLE_SERVICE_ACCOUNT_PATH;
+const BASE_URL = 'https://getestimateai.co.uk';
+
+// Initialize Google Indexing API client
+function getIndexingClient() {
+  const auth = new google.auth.GoogleAuth({
+    keyFile: SERVICE_ACCOUNT_PATH,
+    scopes: ['https://www.googleapis.com/auth/indexing'],
+  });
+
+  return google.indexing({
+    version: 'v3',
+    auth: auth,
+  });
+}
+
+// Helper function to submit URL to Google Indexing API
+async function submitUrlToGoogle(url, type = 'URL_UPDATED') {
+  try {
+    const indexing = getIndexingClient();
+    
+    const response = await indexing.urlNotifications.publish({
+      requestBody: {
+        url: url,
+        type: type, // 'URL_UPDATED' or 'URL_DELETED'
+      },
+    });
+
+    console.log(`✅ Submitted to Google: ${url}`);
+    return { success: true, url, response: response.data };
+  } catch (error) {
+    console.error(`❌ Failed to submit ${url}:`, error.message);
+    return { success: false, url, error: error.message };
+  }
+}
+
+// Helper function to add delay between requests (avoid rate limits)
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// PROTECTED ROUTE: Trigger reindexing of all regional pages
+app.post('/api/admin/reindex', async (req, res) => {
+  // Security check
+  const providedSecret = req.headers['x-reindex-secret'] || req.query.secret;
+  
+  if (!providedSecret || providedSecret !== REINDEX_SECRET) {
+    console.log('❌ Unauthorized reindex attempt');
+    return res.status(401).json({ 
+      error: 'Unauthorized',
+      message: 'Invalid or missing reindex secret'
+    });
+  }
+
+  console.log('🚀 Starting Google Indexing API submission...');
+  
+  try {
+    const results = {
+      total: 0,
+      successful: 0,
+      failed: 0,
+      urls: [],
+    };
+
+    // Submit homepage
+    const homepageResult = await submitUrlToGoogle(`${BASE_URL}/`);
+    results.urls.push(homepageResult);
+    results.total++;
+    if (homepageResult.success) results.successful++;
+    else results.failed++;
+    
+    await delay(1000); // 1 second delay
+
+    // Submit regional hub page
+    const hubResult = await submitUrlToGoogle(`${BASE_URL}/costs`);
+    results.urls.push(hubResult);
+    results.total++;
+    if (hubResult.success) results.successful++;
+    else results.failed++;
+    
+    await delay(1000);
+
+    // Submit all regional pages from regionalCostData.json
+    for (const region of regionalData.regions) {
+      const url = `${BASE_URL}/costs/${region.slug}`;
+      const result = await submitUrlToGoogle(url);
+      
+      results.urls.push(result);
+      results.total++;
+      if (result.success) results.successful++;
+      else results.failed++;
+      
+      // Rate limiting: Google allows 200 requests/minute for Indexing API
+      // Add 1 second delay between requests to be safe (60 requests/minute)
+      await delay(1000);
+    }
+
+    // Submit article pages
+    const articles = [
+      '/articles',
+      '/articles/house-rewire-costs-uk-2026',
+      '/articles/boiler-installation-costs-uk-2026',
+      '/articles/loft-conversion-costs-uk-2026',
+      '/articles/3-bed-house-renovation-costs-uk-2026',
+    ];
+
+    for (const article of articles) {
+      const url = `${BASE_URL}${article}`;
+      const result = await submitUrlToGoogle(url);
+      
+      results.urls.push(result);
+      results.total++;
+      if (result.success) results.successful++;
+      else results.failed++;
+      
+      await delay(1000);
+    }
+
+    console.log(`✅ Reindexing complete: ${results.successful}/${results.total} successful`);
+
+    return res.json({
+      success: true,
+      message: 'Reindexing request completed',
+      summary: {
+        total: results.total,
+        successful: results.successful,
+        failed: results.failed,
+      },
+      details: results.urls,
+      timestamp: new Date().toISOString(),
+    });
+
+  } catch (error) {
+    console.error('❌ Reindexing error:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Optional: Route to check indexing status of a URL
+app.get('/api/admin/indexing-status', async (req, res) => {
+  const providedSecret = req.headers['x-reindex-secret'] || req.query.secret;
+  
+  if (!providedSecret || providedSecret !== REINDEX_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const url = req.query.url;
+  
+  if (!url) {
+    return res.status(400).json({ error: 'URL parameter required' });
+  }
+
+  try {
+    const indexing = getIndexingClient();
+    const response = await indexing.urlNotifications.getMetadata({ url });
+    
+    return res.json({
+      success: true,
+      url,
+      metadata: response.data,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// ============================================
+// END GOOGLE INDEXING API
+// ============================================
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
