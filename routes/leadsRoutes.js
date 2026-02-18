@@ -15,11 +15,15 @@ router.post('/', async (req, res) => {
       jobName,
       quality,
       hasPhotos,
+      source,
+      userLocation,
       timestamp,
-      estimateData  // NEW: Optional estimate data to include in email
+      estimateData  // Optional estimate data to include in email
     } = req.body;
 
-    // Validation
+    // Validation — only email is required
+    // category/jobType are optional: PDF downloads and waitlist signups
+    // don't have this context
     if (!email || !email.includes('@')) {
       return res.status(400).json({
         success: false,
@@ -27,23 +31,17 @@ router.post('/', async (req, res) => {
       });
     }
 
-    if (!category || !jobType) {
-      return res.status(400).json({
-        success: false,
-        error: 'Category and job type are required'
-      });
-    }
-
     // Create lead document
     const leadDocument = new Lead({
       email: email.toLowerCase().trim(),
-      category: category.toLowerCase(),
-      jobType,
-      jobName,
+      category: category ? category.toLowerCase() : undefined,
+      jobType: jobType || undefined,
+      jobName: jobName || undefined,
       quality: quality ? quality.toLowerCase() : 'standard',
       hasPhotos: hasPhotos || false,
       status: 'new',
-      source: 'web-app',
+      source: source || 'web-app',
+      userLocation: userLocation || undefined,
       createdAt: timestamp ? new Date(timestamp) : new Date()
     });
 
@@ -53,25 +51,29 @@ router.post('/', async (req, res) => {
     console.log('✅ Lead captured:', {
       leadId: savedLead._id,
       email: savedLead.email,
-      jobType: savedLead.jobName,
+      source: savedLead.source,
+      jobName: savedLead.jobName,
       hasPhotos: savedLead.hasPhotos
     });
 
-    // Send welcome email asynchronously (don't wait for it)
-    console.log('📤 Attempting to send welcome email to:', email);
-    sendWelcomeEmail(savedLead.toObject(), estimateData)
-      .then((result) => {
-        console.log('📧 Welcome email sent successfully!');
-        console.log('   Email ID:', result.id);
-        console.log('   Recipient:', email);
-      })
-      .catch(err => {
-        console.error('❌ Email sending failed!');
-        console.error('   Error:', err.message);
-        console.error('   Full error:', err);
-      });
+    // Only send welcome email for full estimate leads, not PDF/waitlist signups
+    const estimateSources = ['web-app', 'estimate'];
+    if (!source || estimateSources.includes(source)) {
+      console.log('📤 Attempting to send welcome email to:', email);
+      sendWelcomeEmail(savedLead.toObject(), estimateData)
+        .then((result) => {
+          console.log('📧 Welcome email sent successfully!');
+          console.log('   Email ID:', result.id);
+          console.log('   Recipient:', email);
+        })
+        .catch(err => {
+          console.error('❌ Email sending failed!');
+          console.error('   Error:', err.message);
+          console.error('   Full error:', err);
+        });
+    }
 
-    // Return success response immediately (don't wait for email)
+    // Return success immediately (don't wait for email)
     res.status(201).json({
       success: true,
       leadId: savedLead._id,
@@ -81,7 +83,6 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('❌ Error creating lead:', error);
     
-    // Handle validation errors
     if (error.name === 'ValidationError') {
       return res.status(400).json({
         success: false,
@@ -106,34 +107,30 @@ router.post('/', async (req, res) => {
 // ============================================
 router.get('/', async (req, res) => {
   try {
-    // TODO: Add authentication middleware to protect this endpoint
-    
     const { 
       status, 
-      category, 
+      category,
+      source,
       limit = 100, 
       skip = 0,
       sortBy = 'createdAt',
       sortOrder = 'desc'
     } = req.query;
 
-    // Build filter
     const filter = {};
     if (status) filter.status = status.toLowerCase();
     if (category) filter.category = category.toLowerCase();
+    if (source) filter.source = source;
 
-    // Determine sort order
     const sortDirection = sortOrder === 'asc' ? 1 : -1;
     const sortObj = { [sortBy]: sortDirection };
 
-    // Get leads with pagination
     const leads = await Lead
       .find(filter)
       .sort(sortObj)
       .skip(parseInt(skip))
       .limit(parseInt(limit));
 
-    // Get total count
     const total = await Lead.countDocuments(filter);
 
     res.json({
@@ -146,7 +143,6 @@ router.get('/', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error fetching leads:', error);
-    
     res.status(500).json({
       success: false,
       error: 'Failed to fetch leads',
@@ -160,8 +156,6 @@ router.get('/', async (req, res) => {
 // ============================================
 router.get('/stats', async (req, res) => {
   try {
-    // TODO: Add authentication middleware
-    
     const stats = await Lead.aggregate([
       {
         $facet: {
@@ -171,6 +165,9 @@ router.get('/stats', async (req, res) => {
           ],
           byCategory: [
             { $group: { _id: '$category', count: { $sum: 1 } } }
+          ],
+          bySource: [
+            { $group: { _id: '$source', count: { $sum: 1 } } }
           ],
           byQuality: [
             { $group: { _id: '$quality', count: { $sum: 1 } } }
@@ -187,6 +184,7 @@ router.get('/stats', async (req, res) => {
                 email: 1, 
                 jobName: 1, 
                 category: 1,
+                source: 1,
                 hasPhotos: 1,
                 status: 1,
                 createdAt: 1 
@@ -196,9 +194,7 @@ router.get('/stats', async (req, res) => {
           todayLeads: [
             {
               $match: {
-                createdAt: {
-                  $gte: new Date(new Date().setHours(0, 0, 0, 0))
-                }
+                createdAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) }
               }
             },
             { $count: 'count' }
@@ -214,7 +210,6 @@ router.get('/stats', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error fetching lead stats:', error);
-    
     res.status(500).json({
       success: false,
       error: 'Failed to fetch statistics',
@@ -228,30 +223,17 @@ router.get('/stats', async (req, res) => {
 // ============================================
 router.get('/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const lead = await Lead.findById(id);
+    const lead = await Lead.findById(req.params.id);
 
     if (!lead) {
-      return res.status(404).json({
-        success: false,
-        error: 'Lead not found'
-      });
+      return res.status(404).json({ success: false, error: 'Lead not found' });
     }
 
-    res.json({
-      success: true,
-      lead
-    });
+    res.json({ success: true, lead });
 
   } catch (error) {
     console.error('❌ Error fetching lead:', error);
-    
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch lead',
-      message: error.message
-    });
+    res.status(500).json({ success: false, error: 'Failed to fetch lead', message: error.message });
   }
 });
 
@@ -260,23 +242,15 @@ router.get('/:id', async (req, res) => {
 // ============================================
 router.patch('/:id', async (req, res) => {
   try {
-    // TODO: Add authentication middleware
-    
     const { id } = req.params;
     const { status, notes, estimateValue, followUpDate } = req.body;
 
-    const updateFields = {
-      updatedAt: new Date()
-    };
+    const updateFields = { updatedAt: new Date() };
 
     if (status) {
       const validStatuses = ['new', 'contacted', 'converted', 'lost'];
       if (!validStatuses.includes(status.toLowerCase())) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid status',
-          validStatuses
-        });
+        return res.status(400).json({ success: false, error: 'Invalid status', validStatuses });
       }
       updateFields.status = status.toLowerCase();
     }
@@ -285,39 +259,18 @@ router.patch('/:id', async (req, res) => {
     if (estimateValue !== undefined) updateFields.estimateValue = estimateValue;
     if (followUpDate !== undefined) updateFields.followUpDate = followUpDate;
 
-    const lead = await Lead.findByIdAndUpdate(
-      id,
-      { $set: updateFields },
-      { new: true, runValidators: true }
-    );
+    const lead = await Lead.findByIdAndUpdate(id, { $set: updateFields }, { new: true, runValidators: true });
 
     if (!lead) {
-      return res.status(404).json({
-        success: false,
-        error: 'Lead not found'
-      });
+      return res.status(404).json({ success: false, error: 'Lead not found' });
     }
 
-    console.log('✅ Lead updated:', {
-      leadId: lead._id,
-      status: lead.status,
-      email: lead.email
-    });
-
-    res.json({
-      success: true,
-      message: 'Lead updated successfully',
-      lead
-    });
+    console.log('✅ Lead updated:', { leadId: lead._id, status: lead.status, email: lead.email });
+    res.json({ success: true, message: 'Lead updated successfully', lead });
 
   } catch (error) {
     console.error('❌ Error updating lead:', error);
-    
-    res.status(500).json({
-      success: false,
-      error: 'Failed to update lead',
-      message: error.message
-    });
+    res.status(500).json({ success: false, error: 'Failed to update lead', message: error.message });
   }
 });
 
@@ -326,37 +279,18 @@ router.patch('/:id', async (req, res) => {
 // ============================================
 router.delete('/:id', async (req, res) => {
   try {
-    // TODO: Add authentication middleware
-    
-    const { id } = req.params;
-
-    const lead = await Lead.findByIdAndDelete(id);
+    const lead = await Lead.findByIdAndDelete(req.params.id);
 
     if (!lead) {
-      return res.status(404).json({
-        success: false,
-        error: 'Lead not found'
-      });
+      return res.status(404).json({ success: false, error: 'Lead not found' });
     }
 
-    console.log('🗑️ Lead deleted:', {
-      leadId: lead._id,
-      email: lead.email
-    });
-
-    res.json({
-      success: true,
-      message: 'Lead deleted successfully'
-    });
+    console.log('🗑️ Lead deleted:', { leadId: lead._id, email: lead.email });
+    res.json({ success: true, message: 'Lead deleted successfully' });
 
   } catch (error) {
     console.error('❌ Error deleting lead:', error);
-    
-    res.status(500).json({
-      success: false,
-      error: 'Failed to delete lead',
-      message: error.message
-    });
+    res.status(500).json({ success: false, error: 'Failed to delete lead', message: error.message });
   }
 });
 

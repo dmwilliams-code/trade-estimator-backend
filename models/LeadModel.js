@@ -15,24 +15,27 @@ const leadSchema = new mongoose.Schema({
     }
   },
   
-  // Project Details
+  // Project Details — all optional, not every lead source has these
   category: {
     type: String,
-    required: [true, 'Category is required'],
-    enum: ['decoration', 'plumbing', 'electrical', 'outdoor'],
-    lowercase: true
+    required: false,
+    enum: ['decoration', 'plumbing', 'electrical', 'outdoor', null],
+    lowercase: true,
+    default: null
   },
   
   jobType: {
     type: String,
-    required: [true, 'Job type is required'],
-    trim: true
+    required: false,
+    trim: true,
+    default: null
   },
   
   jobName: {
     type: String,
-    required: [true, 'Job name is required'],
-    trim: true
+    required: false,
+    trim: true,
+    default: null
   },
   
   quality: {
@@ -46,6 +49,11 @@ const leadSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+
+  userLocation: {
+    type: String,
+    default: null
+  },
   
   // Lead Status Management
   status: {
@@ -55,13 +63,17 @@ const leadSchema = new mongoose.Schema({
     lowercase: true
   },
   
-  // Tracking Information
+  // Source identifies where the lead came from:
+  // 'web-app'            — original estimate email capture
+  // 'pdf_download'       — EstimatePDF email gate
+  // 'timeline_preview'   — Timeline free preview (removed, kept for legacy)
+  // 'timeline_waitlist'  — Timeline Pro waitlist
   source: {
     type: String,
     default: 'web-app'
   },
   
-  // Optional fields for future use
+  // Optional fields
   notes: {
     type: String,
     default: null
@@ -101,17 +113,15 @@ leadSchema.pre('save', function(next) {
   next();
 });
 
-// Indexes for better query performance
+// Indexes for query performance
 leadSchema.index({ email: 1 });
 leadSchema.index({ createdAt: -1 });
 leadSchema.index({ status: 1 });
+leadSchema.index({ source: 1 });
 leadSchema.index({ category: 1, status: 1 });
 
 // Text index for searching
-leadSchema.index({ 
-  email: 'text', 
-  jobName: 'text'
-});
+leadSchema.index({ email: 'text', jobName: 'text' });
 
 const Lead = mongoose.model('Lead', leadSchema);
 
