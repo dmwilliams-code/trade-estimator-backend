@@ -253,7 +253,7 @@ Please provide a detailed analysis structured as follows. Be specific, actionabl
 **7. PRIORITY ACTION LIST** (numbered 1-10, ordered by impact×effort, with a one-line description of each action and the expected benefit)`;
 
   const message = await client.messages.create({
-    model: 'claude-opus-4-6',
+    model: 'claude-sonnet-4-6',
     max_tokens: 4000,
     messages: [{ role: 'user', content: prompt }],
   });
