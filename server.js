@@ -678,15 +678,7 @@ app.post('/api/save-estimate', async (req, res) => {
       });
     }
 
-    // Validate projectSize for room-based jobs
-    if (inputType === 'room' && !projectSize) {
-      return res.status(400).json({
-        error: 'Project size is required for room-based jobs',
-        required: ['projectSize']
-      });
-    }
-
-    // Validate projectSize enum
+    // Validate projectSize enum if provided (not required — estimate can save before size is set)
     const validSizes = ['small', 'medium', 'large', 'extra-large'];
     if (projectSize && !validSizes.includes(projectSize)) {
       return res.status(400).json({
@@ -695,10 +687,13 @@ app.post('/api/save-estimate', async (req, res) => {
       });
     }
 
-    // Validate areaQuantity for area-based jobs
-    if ((inputType === 'area' || inputType === 'unit') && (!areaQuantity || areaQuantity <= 0)) {
+    // Validate areaQuantity for sqm/area-based jobs only
+    // 'unit' type jobs (boiler, loft conversion etc.) are single-price — no area needed
+    const isSqmBased = inputType === 'sqm' || inputType === 'area';
+    const parsedArea = parseFloat(areaQuantity);
+    if (isSqmBased && (!areaQuantity || isNaN(parsedArea) || parsedArea <= 0)) {
       return res.status(400).json({
-        error: 'Area quantity is required for area/unit-based jobs',
+        error: 'Area quantity is required for sqm-based jobs',
         required: ['areaQuantity']
       });
     }

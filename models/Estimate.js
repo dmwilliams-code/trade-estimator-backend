@@ -9,7 +9,7 @@ const estimateSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['decoration', 'plumbing', 'electrical', 'outdoor']
+    enum: ['decoration', 'plumbing', 'electrical', 'outdoor', 'building']
   },
   jobType: {
     type: String,
@@ -24,7 +24,7 @@ const estimateSchema = new mongoose.Schema({
   inputType: {
     type: String,
     required: true,
-    enum: ['room', 'area', 'unit']  // Changed 'sqm' to 'area' to match frontend
+    enum: ['room', 'sqm', 'area', 'unit']  // 'sqm' is what the frontend sends for area-based jobs
   },
   
   // UPDATED: Single project size field (replaces roomCounts)

@@ -19,7 +19,7 @@ const leadSchema = new mongoose.Schema({
   category: {
     type: String,
     required: false,
-    enum: ['decoration', 'plumbing', 'electrical', 'outdoor', null],
+    enum: ['decoration', 'plumbing', 'electrical', 'outdoor', 'building', null],
     lowercase: true,
     default: null
   },
