@@ -70,16 +70,15 @@ const estimateSchema = new mongoose.Schema({
     materials: [String]        // Simplified to match frontend
   },
   
-  // Calculation Results - UPDATED to match frontend structure
+  // Calculation Results — matches what App.js sends from computeEstimate()
   estimate: {
-    min: Number,              // NEW: minimum estimate
-    max: Number,              // NEW: maximum estimate
-    baseCost: Number,         // NEW: base cost before multipliers
-    breakdown: [{             // NEW: itemized breakdown
-      item: String,
-      calculation: String,
-      subtotal: Number
-    }],
+    total: Number,            // Final cost after all multipliers
+    labour: Number,           // Labour portion
+    materials: Number,        // Materials portion
+    baseRate: Number,         // Base rate for the job
+    quantity: Number,         // Rooms, sqm, or 1 for unit jobs
+    unit: String,             // 'room', 'sqm', or 'unit'
+    confidence: Number,       // Confidence score 0-100
     photoEnhanced: {
       type: Boolean,
       default: false
@@ -134,8 +133,8 @@ estimateSchema.methods.getSummary = function() {
     job: this.jobName,
     projectSize: this.projectSizeDisplay,
     region: this.locationData?.region || 'Unknown',
-    estimateRange: this.estimate?.min && this.estimate?.max 
-      ? `£${this.estimate.min.toLocaleString()} - £${this.estimate.max.toLocaleString()}`
+    estimateTotal: this.estimate?.total
+      ? `£${this.estimate.total.toLocaleString()}`
       : 'N/A',
     date: this.createdAt.toLocaleDateString()
   };
