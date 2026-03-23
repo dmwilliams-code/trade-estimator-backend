@@ -667,7 +667,8 @@ app.post('/api/save-estimate', async (req, res) => {
       photoAnalysis,
       estimate,
       multipliers,
-      contractors
+      contractors,
+      source
     } = req.body;
 
     // Validation
@@ -744,6 +745,9 @@ app.post('/api/save-estimate', async (req, res) => {
       // Multipliers
       multipliers,
       
+      // Source article (from ?ref= param — not personal data)
+      source: source || null,
+
       // Contractors (top 5 only - public business data)
       contractorsShown: contractors ? contractors.slice(0, 5).map(c => ({
         name: c.name,
@@ -1016,6 +1020,145 @@ app.get('/api/admin/indexing-status', async (req, res) => {
 
 // ============================================
 // END GOOGLE INDEXING API
+// ============================================
+
+// ============================================
+// ANNOTATIONS — intervention log for analysis
+// ============================================
+// Records deliberate site changes so future GSC/GA4 analysis sessions
+// can distinguish organic ranking movements from intervention effects.
+//
+// Protected by REINDEX_SECRET (same admin key as indexing routes).
+// POST /api/admin/annotations  — create an annotation
+// GET  /api/admin/annotations  — retrieve annotations (supports ?since=ISO&type=seo)
+
+const Annotation = require('./models/Annotation');
+
+// POST — log a new intervention
+app.post('/api/admin/annotations', async (req, res) => {
+  const providedSecret = req.headers['x-reindex-secret'] || req.query.secret;
+  if (!providedSecret || providedSecret !== REINDEX_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const {
+      date,
+      type,
+      description,
+      affectedUrls,
+      hypothesis,
+      filesChanged
+    } = req.body;
+
+    if (!type || !description) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        required: ['type', 'description']
+      });
+    }
+
+    const annotation = new Annotation({
+      date: date ? new Date(date) : new Date(),
+      type,
+      description,
+      affectedUrls:  Array.isArray(affectedUrls)  ? affectedUrls  : [],
+      hypothesis:    Array.isArray(hypothesis)     ? hypothesis    : [],
+      filesChanged:  Array.isArray(filesChanged)   ? filesChanged  : []
+    });
+
+    const saved = await annotation.save();
+    console.log(`📝 Annotation saved: [${saved.type}] ${saved.description}`);
+
+    return res.status(201).json({
+      success: true,
+      annotationId: saved._id,
+      annotation: saved
+    });
+
+  } catch (error) {
+    console.error('❌ Error saving annotation:', error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: Object.keys(error.errors).map(k => ({
+          field: k,
+          message: error.errors[k].message
+        }))
+      });
+    }
+    return res.status(500).json({ error: 'Failed to save annotation' });
+  }
+});
+
+// GET — retrieve annotations for analysis context
+// Optional query params:
+//   ?since=2026-03-11   — only annotations on or after this date
+//   ?type=seo           — filter by type
+//   ?limit=50           — max results (default 100)
+app.get('/api/admin/annotations', async (req, res) => {
+  const providedSecret = req.headers['x-reindex-secret'] || req.query.secret;
+  if (!providedSecret || providedSecret !== REINDEX_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const { since, type, limit = 100 } = req.query;
+
+    const filter = {};
+    if (since) filter.date = { $gte: new Date(since) };
+    if (type)  filter.type = type;
+
+    const annotations = await Annotation.find(filter)
+      .sort({ date: -1 })
+      .limit(Math.min(parseInt(limit), 500));
+
+    return res.json({
+      success: true,
+      count: annotations.length,
+      annotations
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching annotations:', error);
+    return res.status(500).json({ error: 'Failed to fetch annotations' });
+  }
+});
+
+// PATCH — add retrospective outcome to an existing annotation
+app.patch('/api/admin/annotations/:id', async (req, res) => {
+  const providedSecret = req.headers['x-reindex-secret'] || req.query.secret;
+  if (!providedSecret || providedSecret !== REINDEX_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const { outcome } = req.body;
+    if (!outcome) {
+      return res.status(400).json({ error: 'outcome field is required' });
+    }
+
+    const annotation = await Annotation.findByIdAndUpdate(
+      req.params.id,
+      { outcome },
+      { new: true }
+    );
+
+    if (!annotation) {
+      return res.status(404).json({ error: 'Annotation not found' });
+    }
+
+    console.log(`📝 Annotation updated: ${annotation._id}`);
+    return res.json({ success: true, annotation });
+
+  } catch (error) {
+    console.error('❌ Error updating annotation:', error);
+    return res.status(500).json({ error: 'Failed to update annotation' });
+  }
+});
+
+// ============================================
+// END ANNOTATIONS
 // ============================================
 
 app.listen(port, () => {

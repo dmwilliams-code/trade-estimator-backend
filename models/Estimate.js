@@ -96,6 +96,13 @@ const estimateSchema = new mongoose.Schema({
     matchScore: Number
   }]
   
+  // Source — which article/page the estimate originated from (via ?ref= param)
+  source: {
+    type: String,
+    default: null,
+    trim: true
+  }
+
   // REMOVED FIELDS (were personal data):
   // ipAddress: REMOVED
   // userAgent: REMOVED
@@ -111,6 +118,7 @@ estimateSchema.index({ createdAt: -1 }); // Sort by date
 estimateSchema.index({ category: 1, jobType: 1 }); // Filter by job type
 estimateSchema.index({ 'locationData.region': 1 }); // Filter by region
 estimateSchema.index({ projectSize: 1 }); // Filter by project size
+estimateSchema.index({ source: 1 });       // Filter by source article
 
 // Virtual for easy display of project size
 estimateSchema.virtual('projectSizeDisplay').get(function() {
