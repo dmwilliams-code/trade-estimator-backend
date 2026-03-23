@@ -94,7 +94,7 @@ const estimateSchema = new mongoose.Schema({
     rating: Number,
     totalReviews: Number,
     matchScore: Number
-  }]
+  }],
   
   // Source — which article/page the estimate originated from (via ?ref= param)
   source: {
