@@ -646,6 +646,7 @@ res.json({
 });
 
 const Estimate = require('./models/Estimate');
+const EstimateReview = require('./models/EstimateReview');
 
 // Import and mount leads routes
 const leadsRouter = require('./routes/leadsRoutes');
@@ -800,6 +801,95 @@ app.post('/api/save-estimate', async (req, res) => {
     res.status(500).json({ 
       error: 'Failed to save estimate',
       message: 'Unable to save your estimate. Please try again.'
+    });
+  }
+});
+
+// Save estimate review endpoint
+app.post('/api/estimate-reviews', async (req, res) => {
+  try {
+    const { estimateId, rating, actualCost, estimatedTotal, comment } = req.body;
+
+    console.log('📝 Review payload received:', JSON.stringify({
+      estimateId,
+      rating,
+      actualCost,
+      estimatedTotal,
+      comment,
+      bodyKeys: Object.keys(req.body)
+    }));
+
+    if (!estimateId || !rating) {
+      console.warn('⚠️ Review rejected — missing fields. estimateId:', estimateId, 'rating:', rating);
+      return res.status(400).json({
+        error: 'Missing required fields',
+        required: ['estimateId', 'rating']
+      });
+    }
+
+    const validRatings = ['low', 'accurate', 'high'];
+    if (!validRatings.includes(rating)) {
+      console.warn('⚠️ Review rejected — invalid rating:', rating);
+      return res.status(400).json({
+        error: 'Invalid rating value',
+        validRatings
+      });
+    }
+
+    const actualCostNum = actualCost ? parseFloat(actualCost) : null;
+    const estimatedTotalNum = estimatedTotal ? parseFloat(estimatedTotal) : null;
+
+    const variance = actualCostNum && estimatedTotalNum
+      ? Math.round((actualCostNum - estimatedTotalNum) * 100) / 100
+      : null;
+
+    const variancePct = variance && estimatedTotalNum
+      ? Math.round((variance / estimatedTotalNum) * 100 * 10) / 10
+      : null;
+
+    const review = new EstimateReview({
+      reviewId:   crypto.randomUUID(),
+      estimateId,
+      rating,
+      actualCost:  actualCostNum,
+      variance,
+      variancePct,
+      comment:    comment || null,
+    });
+
+    console.log('💾 Attempting review save...');
+    const savedReview = await review.save();
+
+    console.log('✅ Review saved:', savedReview.reviewId);
+    console.log('   Estimate ID:', savedReview.estimateId);
+    console.log('   Rating:', savedReview.rating);
+    if (savedReview.variancePct !== null) {
+      console.log('   Variance:', savedReview.variancePct + '%');
+    }
+
+    res.json({
+      success: true,
+      reviewId: savedReview.reviewId,
+      message: 'Review saved successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Error saving review:', error.message);
+    console.error('❌ Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: Object.keys(error.errors).map(key => ({
+          field: key,
+          message: error.errors[key].message
+        }))
+      });
+    }
+
+    res.status(500).json({
+      error: 'Failed to save review',
+      message: 'Unable to save your review. Please try again.'
     });
   }
 });
