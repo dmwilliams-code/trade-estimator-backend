@@ -54,7 +54,6 @@ const openai = new OpenAI({
 
 // Initialize Google Places client
 const googlePlacesClient = new Client({});
-let searchResults;
 
 function hashPostcode(postcode) {
      if (!postcode || typeof postcode !== 'string') {
@@ -134,7 +133,7 @@ app.use(cors({
     'http://localhost:3000',  // For local development
     'http://localhost:3001'   // For local development
   ],
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'PATCH'],
   credentials: true,
   optionsSuccessStatus: 200
 }));
@@ -802,6 +801,50 @@ app.post('/api/save-estimate', async (req, res) => {
       error: 'Failed to save estimate',
       message: 'Unable to save your estimate. Please try again.'
     });
+  }
+});
+
+// Update estimate with photo analysis results
+app.patch('/api/save-estimate/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { estimate, photoAnalysis, multipliers } = req.body;
+
+    if (!id || !estimate) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        required: ['id', 'estimate']
+      });
+    }
+
+    const updated = await Estimate.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          estimate,
+          multipliers,
+          photoAnalysis: photoAnalysis ? {
+            adjustment: photoAnalysis.adjustment,
+            confidence: photoAnalysis.confidence,
+            insights: photoAnalysis.insights,
+            detectedIssues: photoAnalysis.detectedIssues,
+            materials: photoAnalysis.materials
+          } : null
+        }
+      },
+      { new: true, runValidators: false }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Estimate not found' });
+    }
+
+    console.log('✅ Estimate updated with photo analysis:', id);
+    res.json({ success: true, estimateId: updated._id });
+
+  } catch (error) {
+    console.error('❌ Error updating estimate:', error);
+    res.status(500).json({ error: 'Failed to update estimate' });
   }
 });
 
