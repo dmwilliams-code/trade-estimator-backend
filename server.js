@@ -43,21 +43,6 @@ const dailyUsageSchema = new mongoose.Schema({
 
 const DailyUsage = mongoose.model('DailyUsage', dailyUsageSchema);
 
-// Blog reaction schema — tracks yes/no helpfulness votes per post
-const blogReactionSchema = new mongoose.Schema(
-  {
-    slug:      { type: String, required: true, trim: true },
-    value:     { type: String, enum: ['yes', 'no'], required: true },
-    anonIp:    { type: String },   // Three-octet IP — not personally identifiable
-    userAgent: { type: String },
-  },
-  { timestamps: true }
-);
-blogReactionSchema.index({ slug: 1, value: 1 });
-blogReactionSchema.index({ slug: 1, anonIp: 1, createdAt: 1 });
-
-const BlogReaction = mongoose.model('BlogReaction', blogReactionSchema);
-
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -174,7 +159,7 @@ const apiLimiter = rateLimit({
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
   // Skip rate limiting for health check
-  skip: (req) => req.path === '/'
+  skip: (req) => req.path === '/' || req.method === 'OPTIONS'
   // Using default keyGenerator which handles IPv6 correctly
 });
 
@@ -1307,115 +1292,6 @@ app.patch('/api/admin/annotations/:id', async (req, res) => {
 
 // ============================================
 // END ANNOTATIONS
-// ============================================
-
-// ============================================
-// BLOG — reaction votes + email subscribers
-// ============================================
-
-// POST /api/blog-reaction
-// Saves a yes/no helpfulness vote for a blog post.
-// Deduplicates by anonymised IP (3 octets) per post per day.
-app.post('/api/blog-reaction', async (req, res) => {
-  try {
-    const { slug, value } = req.body;
-
-    if (!slug || typeof slug !== 'string' || slug.trim().length === 0) {
-      return res.status(400).json({ error: 'slug is required' });
-    }
-    if (!['yes', 'no'].includes(value)) {
-      return res.status(400).json({ error: 'value must be yes or no' });
-    }
-
-    // Anonymise IP to three octets — not personally identifiable
-    const rawIp =
-      req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-      req.socket?.remoteAddress ||
-      '';
-    const anonIp = rawIp.split('.').slice(0, 3).join('.') + '.x';
-
-    // One vote per anonymised IP per post per calendar day
-    const dayStart = new Date();
-    dayStart.setHours(0, 0, 0, 0);
-
-    const existing = await BlogReaction.findOne({
-      slug: slug.trim(),
-      anonIp,
-      createdAt: { $gte: dayStart },
-    });
-
-    if (existing) {
-      // Already voted today — acknowledge silently, don't double-count
-      return res.status(200).json({ saved: false, reason: 'duplicate' });
-    }
-
-    await BlogReaction.create({
-      slug:      slug.trim(),
-      value,
-      anonIp,
-      userAgent: req.headers['user-agent']?.slice(0, 200) || '',
-    });
-
-    console.log(`📝 Blog reaction saved: slug=${slug} value=${value}`);
-    return res.status(201).json({ saved: true });
-
-  } catch (err) {
-    console.error('❌ Error saving blog reaction:', err);
-    return res.status(500).json({ error: 'Failed to save reaction' });
-  }
-});
-
-// POST /api/subscribe
-// Saves a blog email subscriber to MongoDB.
-// Stores source ('blog') and the originating post slug for attribution.
-const BlogSubscriber = require('./models/BlogSubscriber');
-
-app.post('/api/subscribe', async (req, res) => {
-  try {
-    const { name, email, source, post } = req.body;
-
-    if (!email || typeof email !== 'string') {
-      return res.status(400).json({ error: 'email is required' });
-    }
-
-    const cleanEmail = email.trim().toLowerCase();
-
-    if (!validator.isEmail(cleanEmail)) {
-      return res.status(400).json({ error: 'Invalid email address' });
-    }
-
-    // Upsert — if they subscribe again from a different post, update the record
-    // rather than creating a duplicate
-    const result = await BlogSubscriber.findOneAndUpdate(
-      { email: cleanEmail },
-      {
-        $set: {
-          name:      name?.trim().slice(0, 100) || '',
-          source:    source || 'blog',
-          updatedAt: new Date(),
-        },
-        $setOnInsert: {
-          email:     cleanEmail,
-          post:      post || null,
-          createdAt: new Date(),
-        },
-      },
-      { upsert: true, new: true }
-    );
-
-    const isNew = result.createdAt.getTime() === result.updatedAt?.getTime();
-    console.log(`📧 Blog subscriber ${isNew ? 'added' : 'updated'}: ${cleanEmail} (source=${source}, post=${post})`);
-
-    return res.status(isNew ? 201 : 200).json({ saved: true });
-
-  } catch (err) {
-    console.error('❌ Error saving subscriber:', err);
-    return res.status(500).json({ error: 'Failed to save subscription' });
-  }
-});
-
-// ============================================
-// END BLOG
 // ============================================
 
 app.listen(port, () => {
