@@ -133,10 +133,13 @@ app.use(cors({
     'http://localhost:3000',  // For local development
     'http://localhost:3001'   // For local development
   ],
-  methods: ['GET', 'POST', 'PATCH'],
+  methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
   credentials: true,
   optionsSuccessStatus: 200
 }));
+
+// Explicitly handle preflight for all routes
+app.options('*', cors());
 
 app.use(express.json({ limit: '10mb' }));
 app.use(mongoSanitize());
