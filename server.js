@@ -126,20 +126,24 @@ async function incrementGlobalUsage() {
 }
 
 // Middleware
-app.use(cors({
+const corsOptions = {
   origin: [
     'https://getestimateai.co.uk',
     'https://www.getestimateai.co.uk',
-    'http://localhost:3000',  // For local development
-    'http://localhost:3001'   // For local development
+    'http://localhost:3000',
+    'http://localhost:3001'
   ],
   methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-reindex-secret'],
   credentials: true,
-  optionsSuccessStatus: 200
-}));
+  optionsSuccessStatus: 200,
+  preflightContinue: false
+};
 
-// Explicitly handle preflight for all routes
-app.options('*', cors());
+app.use(cors(corsOptions));
+
+// Handle all OPTIONS preflight requests using the same corsOptions
+app.options('*', cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(mongoSanitize());
