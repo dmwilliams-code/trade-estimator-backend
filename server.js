@@ -1301,6 +1301,118 @@ app.patch('/api/admin/annotations/:id', async (req, res) => {
 // END ANNOTATIONS
 // ============================================
 
+// ============================================
+// BLOG — reaction votes + email subscribers
+// ============================================
+
+// Blog reaction schema
+const blogReactionSchema = new mongoose.Schema(
+  {
+    slug:      { type: String, required: true, trim: true },
+    value:     { type: String, enum: ['yes', 'no'], required: true },
+    anonIp:    { type: String },
+    userAgent: { type: String },
+  },
+  { timestamps: true }
+);
+blogReactionSchema.index({ slug: 1, value: 1 });
+blogReactionSchema.index({ slug: 1, anonIp: 1, createdAt: 1 });
+const BlogReaction = mongoose.model('BlogReaction', blogReactionSchema);
+
+// POST /api/blog-reaction
+app.post('/api/blog-reaction', async (req, res) => {
+  try {
+    const { slug, value } = req.body;
+
+    if (!slug || typeof slug !== 'string' || slug.trim().length === 0) {
+      return res.status(400).json({ error: 'slug is required' });
+    }
+    if (!['yes', 'no'].includes(value)) {
+      return res.status(400).json({ error: 'value must be yes or no' });
+    }
+
+    const rawIp =
+      req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+      req.socket?.remoteAddress || '';
+    const anonIp = rawIp.split('.').slice(0, 3).join('.') + '.x';
+
+    const dayStart = new Date();
+    dayStart.setHours(0, 0, 0, 0);
+
+    const existing = await BlogReaction.findOne({
+      slug: slug.trim(),
+      anonIp,
+      createdAt: { $gte: dayStart },
+    });
+
+    if (existing) {
+      return res.status(200).json({ saved: false, reason: 'duplicate' });
+    }
+
+    await BlogReaction.create({
+      slug:      slug.trim(),
+      value,
+      anonIp,
+      userAgent: req.headers['user-agent']?.slice(0, 200) || '',
+    });
+
+    console.log(`📝 Blog reaction saved: slug=${slug} value=${value}`);
+    return res.status(201).json({ saved: true });
+
+  } catch (err) {
+    console.error('❌ Error saving blog reaction:', err);
+    return res.status(500).json({ error: 'Failed to save reaction' });
+  }
+});
+
+// POST /api/subscribe
+const BlogSubscriber = require('./models/BlogSubscriber');
+
+app.post('/api/subscribe', async (req, res) => {
+  try {
+    const { name, email, source, post } = req.body;
+
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ error: 'email is required' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!validator.isEmail(cleanEmail)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
+
+    const result = await BlogSubscriber.findOneAndUpdate(
+      { email: cleanEmail },
+      {
+        $set: {
+          name:      name?.trim().slice(0, 100) || '',
+          source:    source || 'blog',
+          updatedAt: new Date(),
+        },
+        $setOnInsert: {
+          email:     cleanEmail,
+          post:      post || null,
+          createdAt: new Date(),
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    const isNew = result.createdAt.getTime() === result.updatedAt?.getTime();
+    console.log(`📧 Blog subscriber ${isNew ? 'added' : 'updated'}: ${cleanEmail} (source=${source}, post=${post})`);
+    return res.status(isNew ? 201 : 200).json({ saved: true });
+
+  } catch (err) {
+    console.error('❌ Error saving subscriber:', err);
+    return res.status(500).json({ error: 'Failed to save subscription' });
+  }
+});
+
+// ============================================
+// END BLOG
+// ============================================
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
