@@ -18,7 +18,8 @@ router.post('/', async (req, res) => {
       source,
       userLocation,
       timestamp,
-      estimateData  // Optional estimate data to include in email
+      estimateData,  // Optional estimate data to include in email
+      contractors    // Optional contractor list to include in email
     } = req.body;
 
     // Validation — only email is required
@@ -60,7 +61,7 @@ router.post('/', async (req, res) => {
     const estimateSources = ['web-app', 'estimate'];
     if (!source || estimateSources.includes(source)) {
       console.log('📤 Attempting to send welcome email to:', email);
-      sendWelcomeEmail(savedLead.toObject(), estimateData)
+      sendWelcomeEmail({ ...savedLead.toObject(), contractors: contractors || [] }, estimateData)
         .then((result) => {
           console.log('📧 Welcome email sent successfully!');
           console.log('   Email ID:', result.id);
