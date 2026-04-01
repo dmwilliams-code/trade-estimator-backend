@@ -1,4 +1,11 @@
 {
+  "redirects": [
+    {
+      "source": "/articles/house-rewire-costs-uk-2026",
+      "destination": "/articles/house-rewire-cost-uk-2026",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
