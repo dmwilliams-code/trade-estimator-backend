@@ -55,6 +55,11 @@ function createGSCClient() {
     process.env.GOOGLE_CLIENT_SECRET
   );
   auth.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+  console.log('OAuth credentials loaded:', {
+    clientId: process.env.GOOGLE_CLIENT_ID ? 'SET' : 'MISSING',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'MISSING',
+    refreshToken: process.env.GOOGLE_REFRESH_TOKEN ? process.env.GOOGLE_REFRESH_TOKEN.substring(0, 10) + '...' : 'MISSING',
+  });
   return google.searchconsole({ version: 'v1', auth });
 }
 
