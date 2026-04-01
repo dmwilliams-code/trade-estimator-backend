@@ -8,16 +8,15 @@
  *   npm install googleapis @anthropic-ai/sdk nodemailer dotenv
  *
  * ENV VARS (add to your .env or Render environment):
- *   GOOGLE_CLIENT_ID
- *   GOOGLE_CLIENT_SECRET
- *   GOOGLE_REFRESH_TOKEN
- *   GSC_SITE_URL              e.g. https://getestimateai.co.uk/
+ *   GOOGLE_SERVICE_ACCOUNT_JSON  base64-encoded service account key JSON
+ *                                Generate: base64 -i keyfile.json | tr -d '\n'
+ *   GSC_SITE_URL                 e.g. sc-domain:getestimateai.co.uk
  *   ANTHROPIC_API_KEY
- *   SMTP_HOST                 e.g. mail.privateemail.com (Namecheap)
- *   SMTP_PORT                 e.g. 587
- *   SMTP_USER                 your email
- *   SMTP_PASS                 your email password
- *   REPORT_RECIPIENT          who gets the report
+ *   SMTP_HOST                    e.g. mail.privateemail.com (Namecheap)
+ *   SMTP_PORT                    e.g. 587
+ *   SMTP_USER                    your email
+ *   SMTP_PASS                    your email password
+ *   REPORT_RECIPIENT             who gets the report
  *
  * SCHEDULE: Add to Render as a cron job: 0 7 * * 1 (every Monday 7am)
  */
@@ -29,7 +28,7 @@ const nodemailer = require('nodemailer');
 
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 
-const SITE_URL = process.env.GSC_SITE_URL || 'https://getestimateai.co.uk/';
+const SITE_URL = process.env.GSC_SITE_URL || 'sc-domain:getestimateai.co.uk';
 const DAYS_BACK = 28;
 const ROW_LIMIT = 500; // max rows per GSC request
 
@@ -50,15 +49,13 @@ const PAGE_CATEGORIES = {
 // ─── GSC CLIENT ──────────────────────────────────────────────────────────────
 
 function createGSCClient() {
-  const auth = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET
-  );
-  auth.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
-  console.log('OAuth credentials loaded:', {
-    clientId: process.env.GOOGLE_CLIENT_ID ? 'SET' : 'MISSING',
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET ? 'SET' : 'MISSING',
-    refreshToken: process.env.GOOGLE_REFRESH_TOKEN ? process.env.GOOGLE_REFRESH_TOKEN.substring(0, 10) + '...' : 'MISSING',
+  const encoded = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (!encoded) throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON env var is not set');
+  const keyFile = JSON.parse(Buffer.from(encoded, 'base64').toString('utf8'));
+  console.log('Service account loaded:', keyFile.client_email || 'unknown');
+  const auth = new google.auth.GoogleAuth({
+    credentials: keyFile,
+    scopes: ['https://www.googleapis.com/auth/webmasters.readonly'],
   });
   return google.searchconsole({ version: 'v1', auth });
 }
