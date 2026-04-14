@@ -434,7 +434,7 @@ function analyzeLocationCost(addressComponents) {
 // Search contractors endpoint
 app.post('/api/search-contractors', async (req, res) => {
   try {
-    const { jobType, userLocation } = req.body;
+    const { jobType, userLocation, quality = 'standard', category = '', projectScale = 1 } = req.body;
 
     if (!jobType) {
       return res.status(400).json({ error: 'Job type is required' });
@@ -494,26 +494,100 @@ app.post('/api/search-contractors', async (req, res) => {
     
     const locationDetails = analyzeLocationCost(addressComponents);
 
-    const searchQuery = `${jobType} contractor`;
+    // ── Job-type to Places type + keyword mapping ──
+    // Maps each job name to the most specific Google Places type available
+    // and a focused keyword so the search pool is relevant to the actual trade
+    const JOB_TYPE_MAP = {
+      // Plumbing
+      'Full Bathroom Installation': { placesType: 'plumber',            keyword: 'bathroom plumber' },
+      'Boiler Replacement':         { placesType: 'plumber',            keyword: 'boiler installation' },
+      'Radiator Installation':      { placesType: 'plumber',            keyword: 'plumber radiator' },
+      'Tap Leaks':                  { placesType: 'plumber',            keyword: 'plumber' },
+      'Toilet Repair':              { placesType: 'plumber',            keyword: 'plumber' },
+      'Radiator Repair':            { placesType: 'plumber',            keyword: 'plumber' },
+      // Electrical
+      'Full Rewire':                { placesType: 'electrician',        keyword: 'electrician rewire' },
+      'Consumer Unit Replacement':  { placesType: 'electrician',        keyword: 'electrician' },
+      'EV Charger Installation':    { placesType: 'electrician',        keyword: 'EV charger electrician' },
+      // Decoration
+      'Paint Room':                 { placesType: 'painter',            keyword: 'painter decorator' },
+      'Wallpaper Room':             { placesType: 'painter',            keyword: 'wallpaper decorator' },
+      'Floor Sanding & Varnishing': { placesType: 'general_contractor', keyword: 'floor sanding' },
+      // Building
+      'Single-Storey Extension':    { placesType: 'general_contractor', keyword: 'building contractor extension' },
+      'Double-Storey Extension':    { placesType: 'general_contractor', keyword: 'building contractor extension' },
+      'Loft Conversion':            { placesType: 'general_contractor', keyword: 'loft conversion contractor' },
+      'Loft Conversion (Dormer)':   { placesType: 'general_contractor', keyword: 'loft conversion contractor' },
+      'Plaster / Skim Room':        { placesType: 'general_contractor', keyword: 'plasterer' },
+      'Full House Re-skim':         { placesType: 'general_contractor', keyword: 'plasterer' },
+      'Kitchen Extension':          { placesType: 'general_contractor', keyword: 'kitchen extension builder' },
+      // Outdoor
+      'Garden Landscaping':         { placesType: 'general_contractor', keyword: 'landscaper garden' },
+      'Window Cleaning':            { placesType: 'general_contractor', keyword: 'window cleaner' },
+    };
+
+    const jobConfig = JOB_TYPE_MAP[jobType] || { placesType: 'general_contractor', keyword: `${jobType} contractor` };
+    const searchQuery = jobConfig.keyword;
     const fullQuery = `${searchQuery} near ${userLocation}`;
 
-    console.log(`Searching: "${fullQuery}"`);
+    console.log(`Searching: "${fullQuery}" (type: ${jobConfig.placesType}, quality: ${quality}, scale: ${projectScale})`);
+
+    // ── Haversine distance helper (metres between two lat/lng points) ──
+    const haversineDistance = (lat1, lng1, lat2, lng2) => {
+      const R = 6371000;
+      const toRad = deg => deg * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+
+    // ── Quality tier to Google Places priceLevel affinity ──
+    // priceLevel: 0=free, 1=inexpensive, 2=moderate, 3=expensive, 4=very expensive
+    // A luxury-finish user should match with higher-priceLevel contractors and vice versa
+    const QUALITY_PRICE_AFFINITY = {
+      budget:   [0, 1],      // prefer inexpensive
+      standard: [1, 2],      // prefer moderate
+      premium:  [2, 3],      // prefer expensive
+      luxury:   [3, 4],      // prefer very expensive
+    };
+    const preferredPriceLevels = QUALITY_PRICE_AFFINITY[quality] || QUALITY_PRICE_AFFINITY.standard;
+
+    // ── Project scale thresholds for review weight adjustment ──
+    // Large projects (big extensions, full rewires, loft conversions) warrant
+    // contractors with more proven track records, so we increase the review count weight
+    const isLargeProject = projectScale >= 30; // 30m² or equivalent weighted rooms
 
 const response = await googlePlacesClient.placesNearby({
   params: {
     location: location,
     radius: 25000,
     keyword: searchQuery,
-    type: 'general_contractor',
+    type: jobConfig.placesType,
     key: process.env.GOOGLE_PLACES_API_KEY
   }
 });
 
 const MIN_RATING = 4.0;
 const MIN_REVIEWS = 10;
-
 const RELAXED_MIN_RATING = 3.5;
 const RELAXED_MIN_REVIEWS = 3;
+
+const mapPlace = (place, qualityVerified) => ({
+  name: place.name,
+  address: place.formatted_address || place.vicinity || 'Address not available',
+  rating: place.rating || 0,
+  totalReviews: place.user_ratings_total || 0,
+  phoneNumber: place.formatted_phone_number || place.international_phone_number,
+  website: place.website,
+  location: place.geometry.location,
+  placeId: place.place_id,
+  openNow: place.opening_hours?.open_now,
+  priceLevel: place.price_level,
+  types: place.types,
+  qualityVerified
+});
 
 let contractors = response.data.results
   .filter(place => {
@@ -521,106 +595,101 @@ let contractors = response.data.results
     const reviews = place.user_ratings_total || 0;
     return rating >= MIN_RATING && reviews >= MIN_REVIEWS;
   })
-  .map(place => ({
-    name: place.name,
-    address: place.formatted_address || place.vicinity || 'Address not available',
-    rating: place.rating || 0,
-    totalReviews: place.user_ratings_total || 0,
-    phoneNumber: place.formatted_phone_number || place.international_phone_number,
-    website: place.website,
-    location: place.geometry.location,
-    placeId: place.place_id,
-    openNow: place.opening_hours?.open_now,
-    priceLevel: place.price_level,
-    types: place.types,
-    qualityVerified: true
-  }));
+  .map(place => mapPlace(place, true));
 
-let filtersUsed = {
-  minimumRating: MIN_RATING,
-  minimumReviews: MIN_REVIEWS,
-  relaxed: false
-};
+let filtersUsed = { minimumRating: MIN_RATING, minimumReviews: MIN_REVIEWS, relaxed: false };
 
 if (contractors.length === 0) {
   console.log('No contractors found with strict filters. Trying relaxed criteria...');
-  
-  const relaxedContractors = response.data.results
+  contractors = response.data.results
     .filter(place => {
       const rating = place.rating || 0;
       const reviews = place.user_ratings_total || 0;
       return rating >= RELAXED_MIN_RATING && reviews >= RELAXED_MIN_REVIEWS;
     })
-.map(place => ({
-  name: place.name,
-  address: place.formatted_address || place.vicinity || 'Address not available',
-  rating: place.rating || 0,
-  totalReviews: place.user_ratings_total || 0,
-  phoneNumber: place.formatted_phone_number || place.international_phone_number,
-      website: place.website,
-      location: place.geometry.location,
-      placeId: place.place_id,
-      openNow: place.opening_hours?.open_now,
-      priceLevel: place.price_level,
-      types: place.types,
-      qualityVerified: false // Doesn't meet strict criteria
-    }));
-  
-  contractors = relaxedContractors;
-  filtersUsed = {
-    minimumRating: RELAXED_MIN_RATING,
-    minimumReviews: RELAXED_MIN_REVIEWS,
-    relaxed: true
-  };
+    .map(place => mapPlace(place, false));
+  filtersUsed = { minimumRating: RELAXED_MIN_RATING, minimumReviews: RELAXED_MIN_REVIEWS, relaxed: true };
 }
 
 console.log(`Found ${contractors.length} contractors matching criteria`);
 
+// ── Scoring weights ──
+// Rating 30% | Reviews 15-20% | Relevance 15% | Proximity 20% | Quality affinity 10% | Presence 5%
+// Review weight scales up to 20% for large projects (more track record needed)
+const reviewWeight = isLargeProject ? 20 : 15;
+const ratingWeight = 30;
+const relevanceWeight = 15;
+const proximityWeight = 20;
+const qualityWeight = 10;
+const presenceWeight = 5;
+// Total always = 100: 30 + (15|20) + 15 + 20 + 10 + 5 = 95|100
+// For small projects the remaining 5 points roll into rating to keep total at 100
+const effectiveRatingWeight = isLargeProject ? ratingWeight : ratingWeight + 5;
 
-// Calculate a match score with improved criteria
 const scoredContractors = contractors.map(contractor => {
   let score = 0;
-  let breakdown = {};
-  
-  // 1. Rating weight (35%) - High ratings matter
-  const ratingScore = (contractor.rating / 5) * 35;
+  const breakdown = {};
+
+  // 1. Rating (30% standard / 35% small projects)
+  const ratingScore = (contractor.rating / 5) * effectiveRatingWeight;
   score += ratingScore;
   breakdown.rating = ratingScore.toFixed(1);
-  
-  // 2. Review count weight (25%) - More reviews = more reliable
-  // Logarithmic scale - diminishing returns after 100 reviews
-  const reviewScore = Math.min(Math.log10(contractor.totalReviews + 1) / 2, 1) * 25;
+
+  // 2. Review count (15% standard / 20% large projects)
+  // Logarithmic — diminishing returns after ~100 reviews
+  const reviewScore = Math.min(Math.log10(contractor.totalReviews + 1) / 2, 1) * reviewWeight;
   score += reviewScore;
   breakdown.reviews = reviewScore.toFixed(1);
-  
-  // 3. Relevance weight (20%) - Does name/types match job?
+
+  // 3. Relevance (15%) — keyword match against business name and Google types
   let relevanceScore = 0;
   const nameAndTypes = `${contractor.name} ${contractor.types.join(' ')}`.toLowerCase();
-  const jobKeywords = searchQuery.toLowerCase().split(' ');
-  
-  jobKeywords.forEach(keyword => {
-    if (nameAndTypes.includes(keyword)) {
-      relevanceScore += 5;
-    }
+  searchQuery.toLowerCase().split(' ').forEach(keyword => {
+    if (keyword.length > 3 && nameAndTypes.includes(keyword)) relevanceScore += 5;
   });
-  relevanceScore = Math.min(relevanceScore, 20);
+  relevanceScore = Math.min(relevanceScore, relevanceWeight);
   score += relevanceScore;
   breakdown.relevance = relevanceScore.toFixed(1);
-  
-  // 4. Active/Open weight (10%)
-  const activeScore = contractor.openNow ? 10 : 0;
-  score += activeScore;
-  breakdown.active = activeScore.toFixed(1);
-  
-  // 5. Professional presence (10%) - Website + multiple contact methods
-  let professionalScore = 0;
-  if (contractor.website) professionalScore += 5;
-  if (contractor.phoneNumber) professionalScore += 5;
-  score += professionalScore;
-  breakdown.professional = professionalScore.toFixed(1);
-  
+
+  // 4. Proximity (20%) — linear decay from 0km (full) to 25km (zero)
+  const distanceM = haversineDistance(
+    location.lat, location.lng,
+    contractor.location.lat, contractor.location.lng
+  );
+  const distanceKm = distanceM / 1000;
+  const proximityScore = Math.max(0, (1 - distanceKm / 25)) * proximityWeight;
+  score += proximityScore;
+  breakdown.proximity = `${proximityScore.toFixed(1)} (${distanceKm.toFixed(1)}km)`;
+
+  // 5. Quality affinity (10%) — price level match to user's chosen finish quality
+  // Full 10 pts if contractor priceLevel is in preferred range, 5 pts if adjacent, 0 otherwise
+  let qualityScore = 0;
+  if (contractor.priceLevel !== undefined && contractor.priceLevel !== null) {
+    if (preferredPriceLevels.includes(contractor.priceLevel)) {
+      qualityScore = qualityWeight;
+    } else if (
+      contractor.priceLevel === preferredPriceLevels[0] - 1 ||
+      contractor.priceLevel === preferredPriceLevels[1] + 1
+    ) {
+      qualityScore = qualityWeight / 2;
+    }
+  } else {
+    // No price level data — award half points rather than penalising
+    qualityScore = qualityWeight / 2;
+  }
+  score += qualityScore;
+  breakdown.quality = qualityScore.toFixed(1);
+
+  // 6. Professional presence (5%) — website and phone number
+  let presenceScore = 0;
+  if (contractor.website) presenceScore += 3;
+  if (contractor.phoneNumber) presenceScore += 2;
+  score += presenceScore;
+  breakdown.presence = presenceScore.toFixed(1);
+
   return {
     ...contractor,
+    distanceKm: Math.round(distanceKm * 10) / 10,
     matchScore: Math.round(score),
     scoreBreakdown: breakdown
   };
