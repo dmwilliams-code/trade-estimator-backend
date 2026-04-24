@@ -57,8 +57,8 @@ router.post('/', async (req, res) => {
       hasPhotos: savedLead.hasPhotos
     });
 
-    // Only send welcome email for full estimate leads, not PDF/waitlist signups
-    const estimateSources = ['web-app', 'estimate'];
+    // Send welcome email for all estimate-related sources
+    const estimateSources = ['web-app', 'estimate', 'estimate-popup', 'contractor-unlock', 'pdf-download'];
     if (!source || estimateSources.includes(source)) {
       console.log('📤 Attempting to send welcome email to:', email);
       sendWelcomeEmail({ ...savedLead.toObject(), contractors: contractors || [] }, estimateData)
