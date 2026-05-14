@@ -398,37 +398,128 @@ async function validateAndGeocodePostcode(postcode) {
 }
 
 // Location-based cost analysis
-function analyzeLocationCost(addressComponents) {
-  let region = 'Unknown';
-  let costMultiplier = 1.0;
-  let costReason = 'Standard UK rates';
+// Primary lookup: outward postcode prefix → multiplier (covers all 52 UK regions in regionalCostData.json)
+// Fallback: postal_town string match for any postcode areas not explicitly mapped
+function analyzeLocationCost(addressComponents, rawPostcode) {
 
+  // ── Postcode prefix lookup ──────────────────────────────────────────────────
+  // Extract area (leading letters) and numeric district from outward code
+  // e.g. SW1A 1AA → area=SW, district=SW1 | SW11 1AA → area=SW, district=SW11
+  function getPostcodeParts(postcode) {
+    if (!postcode || typeof postcode !== 'string') return null;
+    const outward = postcode.replace(/\s+/g, '').toUpperCase().slice(0, -3);
+    if (!outward) return null;
+    const areaMatch = outward.match(/^([A-Z]+)/);
+    if (!areaMatch) return null;
+    const area = areaMatch[1];
+    const districtNum = outward.replace(/[A-Z]$/, ''); // strip trailing sector letter
+    return { area, districtNum };
+  }
+
+  // Central London specific districts (must check before generic Greater London areas)
+  const CENTRAL_LONDON_AREAS = ['EC', 'WC'];
+  const CENTRAL_LONDON_DISTRICTS = ['W1', 'SW1', 'SW3', 'SW5', 'SW7', 'SW10', 'SE1', 'N1', 'NW1', 'NW8'];
+
+  // Greater London (all remaining London outward code areas)
+  const GREATER_LONDON_AREAS = ['E', 'N', 'NW', 'SE', 'SW', 'W', 'BR', 'CR', 'DA', 'EN', 'HA', 'IG', 'KT', 'RM', 'SM', 'TN', 'TW', 'UB'];
+
+  // London-adjacent premium cities (1.25×)
+  const TIER_125_AREAS = ['SL', 'RG', 'OX', 'CB', 'WD', 'BN', 'BA'];
+
+  // Major cities (1.15×)
+  const TIER_115_AREAS = [
+    'AB',       // Aberdeen
+    'B',        // Birmingham
+    'BD',       // Bradford (Leeds metro)
+    'BH',       // Bournemouth
+    'BL',       // Bolton (Greater Manchester)
+    'BS',       // Bristol
+    'CH',       // Chester / Birkenhead
+    'CT',       // Canterbury
+    'EH',       // Edinburgh
+    'G',        // Glasgow
+    'GL',       // Gloucester / Cheltenham
+    'L',        // Liverpool
+    'LS',       // Leeds
+    'LU',       // Luton
+    'M',        // Manchester
+    'MK',       // Milton Keynes
+    'ML',       // Motherwell (Glasgow metro)
+    'OL',       // Oldham (Greater Manchester)
+    'PA',       // Paisley (Glasgow metro)
+    'PO',       // Portsmouth
+    'S',        // Sheffield
+    'SK',       // Stockport (Greater Manchester)
+    'SO',       // Southampton
+    'WA',       // Warrington
+    'WF',       // Wakefield (Leeds metro)
+    'WN',       // Wigan (Greater Manchester)
+  ];
+
+  // Secondary cities (1.05×)
+  const TIER_105_AREAS = ['CF', 'DD', 'EX', 'NE', 'NG', 'NR', 'SN', 'YO'];
+
+  // National average cities (1.0×)
+  const TIER_100_AREAS = ['CO', 'CV', 'DE', 'DY', 'FY', 'IP', 'LE', 'NP', 'PE', 'PL', 'PR', 'SA', 'SR', 'TF', 'WV'];
+
+  // Below-average areas (0.95×)
+  const TIER_095_AREAS = ['DL', 'DN', 'HU', 'ST', 'TS'];
+
+  const parts = getPostcodeParts(rawPostcode);
+
+  if (parts) {
+    const { area, districtNum } = parts;
+
+    if (CENTRAL_LONDON_AREAS.includes(area) || CENTRAL_LONDON_DISTRICTS.includes(districtNum)) {
+      return { region: 'Central London', costMultiplier: 1.55, costReason: 'Central London rates (ULEZ, parking permits, premium labour)' };
+    }
+    if (GREATER_LONDON_AREAS.includes(area)) {
+      return { region: 'Greater London', costMultiplier: 1.35, costReason: 'Greater London rates (materials, labour, access costs)' };
+    }
+    if (TIER_125_AREAS.includes(area)) {
+      return { region: area, costMultiplier: 1.25, costReason: 'London-adjacent premium city rates' };
+    }
+    if (TIER_115_AREAS.includes(area)) {
+      return { region: area, costMultiplier: 1.15, costReason: 'Major city rates' };
+    }
+    if (TIER_105_AREAS.includes(area)) {
+      return { region: area, costMultiplier: 1.05, costReason: 'Above-average regional rates' };
+    }
+    if (TIER_100_AREAS.includes(area)) {
+      return { region: area, costMultiplier: 1.0, costReason: 'Standard UK rates' };
+    }
+    if (TIER_095_AREAS.includes(area)) {
+      return { region: area, costMultiplier: 0.95, costReason: 'Below-average regional rates' };
+    }
+  }
+
+  // ── Fallback: postal_town string match ──────────────────────────────────────
+  // Catches any postcode areas not in the prefix map above
   const city = addressComponents.find(c => c.types.includes('postal_town'))?.long_name;
   const adminArea = addressComponents.find(c => c.types.includes('administrative_area_level_2'))?.long_name;
 
   if (city?.toLowerCase().includes('london')) {
-    region = 'London';
-    costMultiplier = 1.5;
-    costReason = 'Higher London rates (materials, labour, permits)';
-  } else if (['Oxford', 'Cambridge', 'Brighton', 'Bristol', 'Bath'].some(c => city?.includes(c))) {
-    region = city;
-    costMultiplier = 1.25;
-    costReason = 'Higher costs in affluent city';
-  } else if (['Manchester', 'Birmingham', 'Leeds', 'Liverpool', 'Newcastle', 'Sheffield', 'Edinburgh', 'Glasgow'].some(c => city?.includes(c))) {
-    region = city;
-    costMultiplier = 1.0;
-    costReason = 'Average rates for major city';
-  } else if (city) {
-    region = city;
-    costMultiplier = 0.85;
-    costReason = 'Lower costs outside major cities';
-  } else if (adminArea) {
-    region = adminArea;
-    costMultiplier = 0.85;
-    costReason = 'Regional rates';
+    return { region: 'Greater London', costMultiplier: 1.35, costReason: 'Greater London rates (materials, labour, access costs)' };
+  }
+  if (['Oxford', 'Cambridge', 'Brighton', 'Bath', 'Reading', 'Slough', 'Watford'].some(c => city?.includes(c))) {
+    return { region: city, costMultiplier: 1.25, costReason: 'London-adjacent premium city rates' };
+  }
+  if (['Manchester', 'Birmingham', 'Leeds', 'Liverpool', 'Sheffield', 'Edinburgh', 'Glasgow', 'Bristol',
+       'Portsmouth', 'Southampton', 'Luton', 'Cheltenham', 'Gloucester', 'Bournemouth',
+       'Milton Keynes', 'Aberdeen', 'Canterbury'].some(c => city?.includes(c))) {
+    return { region: city, costMultiplier: 1.15, costReason: 'Major city rates' };
+  }
+  if (['Cardiff', 'Nottingham', 'Newcastle', 'Exeter', 'Swindon', 'Dundee', 'York', 'Norwich'].some(c => city?.includes(c))) {
+    return { region: city, costMultiplier: 1.05, costReason: 'Above-average regional rates' };
+  }
+  if (['Hull', 'Stoke', 'Middlesbrough'].some(c => city?.includes(c))) {
+    return { region: city, costMultiplier: 0.95, costReason: 'Below-average regional rates' };
+  }
+  if (city) {
+    return { region: city, costMultiplier: 1.0, costReason: 'Standard UK rates' };
   }
 
-  return { region, costMultiplier, costReason };
+  return { region: adminArea || 'Unknown', costMultiplier: 1.0, costReason: 'Standard UK rates' };
 }
 
 // Search contractors endpoint
@@ -492,7 +583,7 @@ app.post('/api/search-contractors', async (req, res) => {
     const location = geocodingResponse.data.results[0].geometry.location;
     const addressComponents = geocodingResponse.data.results[0].address_components;
     
-    const locationDetails = analyzeLocationCost(addressComponents);
+    const locationDetails = analyzeLocationCost(addressComponents, userLocation);
 
     // ── Job-type to Places type + keyword mapping ──
     // Maps each job name to the most specific Google Places type available
