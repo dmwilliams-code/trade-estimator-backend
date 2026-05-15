@@ -57,9 +57,10 @@ router.post('/', async (req, res) => {
       hasPhotos: savedLead.hasPhotos
     });
 
-    // Send welcome email for all estimate-related sources
-    const estimateSources = ['web-app', 'estimate', 'estimate-popup', 'contractor-unlock', 'pdf-download'];
-    if (!source || estimateSources.includes(source)) {
+    // Send welcome email for all sources except explicitly excluded ones
+    // Blocklist approach: add to noEmailSources to suppress, rather than maintaining a whitelist
+    const noEmailSources = ['admin', 'test', 'dev'];
+    if (!noEmailSources.includes(source)) {
       console.log('📤 Attempting to send welcome email to:', email);
       sendWelcomeEmail({ ...savedLead.toObject(), contractors: contractors || [] }, estimateData)
         .then((result) => {
