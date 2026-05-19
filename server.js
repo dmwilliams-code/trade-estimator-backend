@@ -1015,6 +1015,57 @@ app.patch('/api/save-estimate/:id', async (req, res) => {
   }
 });
 
+// Get a single estimate by ID (for shared estimate permalinks)
+app.get('/api/estimate/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || id.length !== 24) {
+      return res.status(400).json({ error: 'Invalid estimate ID' });
+    }
+
+    const estimate = await Estimate.findByIdAndUpdate(
+      id,
+      { $inc: { viewCount: 1 } },
+      { new: true, strict: false, lean: true }
+    );
+
+    if (!estimate) {
+      return res.status(404).json({ error: 'Estimate not found' });
+    }
+
+    console.log('👁 Estimate viewed:', id, '— viewCount:', estimate.viewCount);
+    res.json({ success: true, estimate });
+  } catch (error) {
+    console.error('❌ Error fetching estimate:', error);
+    res.status(500).json({ error: 'Failed to fetch estimate' });
+  }
+});
+
+// Record a share action on an estimate
+app.patch('/api/estimate/:id/share', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id || id.length !== 24) {
+      return res.status(400).json({ error: 'Invalid estimate ID' });
+    }
+    const updated = await Estimate.findByIdAndUpdate(
+      id,
+      {
+        $set: { sharedAt: new Date() },
+        $inc: { shareCount: 1 }
+      },
+      { new: true, strict: false }
+    );
+    if (!updated) return res.status(404).json({ error: 'Estimate not found' });
+    console.log('🔗 Estimate shared:', id, '— shareCount:', updated.shareCount);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ Error recording share:', error);
+    res.status(500).json({ error: 'Failed to record share' });
+  }
+});
+
 // Save estimate review endpoint
 app.post('/api/estimate-reviews', async (req, res) => {
   try {
