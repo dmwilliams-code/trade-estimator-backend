@@ -101,9 +101,21 @@ const estimateSchema = new mongoose.Schema({
     type: String,
     default: null,
     trim: true
-  }
+  },
 
-  // REMOVED FIELDS (were personal data):
+  // Sharing & engagement tracking
+  sharedAt: {
+    type: Date,
+    default: null
+  },
+  shareCount: {
+    type: Number,
+    default: 0
+  },
+  viewCount: {
+    type: Number,
+    default: 0
+  }
   // ipAddress: REMOVED
   // userAgent: REMOVED
   // userLocation (actual postcode): REMOVED (using locationHash instead)
@@ -119,6 +131,7 @@ estimateSchema.index({ category: 1, jobType: 1 }); // Filter by job type
 estimateSchema.index({ 'locationData.region': 1 }); // Filter by region
 estimateSchema.index({ projectSize: 1 }); // Filter by project size
 estimateSchema.index({ source: 1 });       // Filter by source article
+estimateSchema.index({ sharedAt: 1 });     // Filter shared estimates
 
 // Virtual for easy display of project size
 estimateSchema.virtual('projectSizeDisplay').get(function() {
