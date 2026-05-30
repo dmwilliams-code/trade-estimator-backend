@@ -239,16 +239,13 @@ async function fetchEventsBySource(client, dateRange) {
 
 /**
  * Fetch week-over-week comparison for headline metrics.
+ * Two separate calls avoids the dateRange-as-dimension issue.
  * Singapore excluded via dimensionFilter.
  */
 async function fetchWeeklyTrend(client) {
-  const [response] = await client.runReport({
+  const weekRequest = (startDate, endDate) => client.runReport({
     property: `properties/${PROPERTY_ID}`,
-    dateRanges: [
-      { startDate: '14daysAgo', endDate: '8daysAgo', name: 'prev_week' },
-      { startDate: '7daysAgo',  endDate: 'yesterday', name: 'this_week' },
-    ],
-    dimensions: [{ name: 'dateRange' }],
+    dateRanges: [{ startDate, endDate }],
     metrics: [
       { name: 'sessions' },
       { name: 'totalUsers' },
@@ -259,16 +256,25 @@ async function fetchWeeklyTrend(client) {
     },
   });
 
-  const result = {};
-  for (const row of response.rows || []) {
-    const label = row.dimensionValues[0].value; // 'this_week' or 'prev_week'
-    result[label] = {
-      sessions: parseInt(row.metricValues[0].value, 10),
-      users: parseInt(row.metricValues[1].value, 10),
+  const parseWeek = ([response]) => {
+    const row = (response.rows || [])[0];
+    if (!row) return { sessions: 0, users: 0, engagedSessions: 0 };
+    return {
+      sessions:        parseInt(row.metricValues[0].value, 10),
+      users:           parseInt(row.metricValues[1].value, 10),
       engagedSessions: parseInt(row.metricValues[2].value, 10),
     };
-  }
-  return result;
+  };
+
+  const [thisWeekResp, prevWeekResp] = await Promise.all([
+    weekRequest('7daysAgo', 'yesterday'),
+    weekRequest('14daysAgo', '8daysAgo'),
+  ]);
+
+  return {
+    this_week: parseWeek(thisWeekResp),
+    prev_week: parseWeek(prevWeekResp),
+  };
 }
 
 // ─── DATA PROCESSING ─────────────────────────────────────────────────────────
