@@ -165,8 +165,8 @@ const apiLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
-  // Skip rate limiting for health check
-  skip: (req) => req.path === '/' || req.method === 'OPTIONS'
+  // Skip rate limiting for health check and contractor-click (has its own limiter)
+  skip: (req) => req.path === '/' || req.method === 'OPTIONS' || req.path === '/api/contractor-click'
   // Using default keyGenerator which handles IPv6 correctly
 });
 
@@ -182,8 +182,18 @@ const photoAnalysisLimiter = rateLimit({
   // Using default keyGenerator which handles IPv6 correctly
 });
 
-// Apply rate limiter to all API routes
+// Contractor click limiter — generous limit, lightweight write, no abuse potential
+const contractorClickLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // 30 clicks per minute per IP — covers testing and normal use
+  message: { error: 'Too many requests', message: 'Please wait before trying again.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Apply strict limiter to all API routes, then override for contractor-click
 app.use('/api/', apiLimiter);
+app.use('/api/contractor-click', contractorClickLimiter);
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -807,39 +817,9 @@ const scoredContractors = contractors.map(contractor => {
     // Sort by match score
     scoredContractors.sort((a, b) => b.matchScore - a.matchScore);
 
-    // ── Enrich top 5 with Place Details ──
-    // Nearby Search doesn't return website or formatted_phone_number.
-    // Fire one Place Details call per top contractor requesting only the
-    // fields we need — keeps billing impact minimal (basic fields tier).
-    const top5 = scoredContractors.slice(0, 5);
-
-    const enriched = await Promise.all(top5.map(async (contractor) => {
-      try {
-        const details = await googlePlacesClient.placeDetails({
-          params: {
-            place_id: contractor.placeId,
-            fields: ['website', 'formatted_phone_number', 'international_phone_number'],
-            key: process.env.GOOGLE_PLACES_API_KEY
-          }
-        });
-        const d = details.data.result;
-        return {
-          ...contractor,
-          website: d.website || contractor.website || null,
-          phoneNumber: d.formatted_phone_number || d.international_phone_number || contractor.phoneNumber || null
-        };
-      } catch (detailsError) {
-        // Details call failed for this contractor — return what Nearby Search gave us
-        console.warn(`Place Details failed for ${contractor.name}:`, detailsError.message);
-        return contractor;
-      }
-    }));
-
-    console.log(`Place Details enrichment complete for ${enriched.length} contractors`);
-
-// Return top 5 contractors (enriched with website and phone from Place Details)
+// Return top 5 contractors
 res.json({
-  contractors: enriched,
+  contractors: scoredContractors.slice(0, 5),
   searchQuery: fullQuery,
   totalFound: response.data.results.length,
   filters: filtersUsed,
