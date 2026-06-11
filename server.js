@@ -43,6 +43,20 @@ const dailyUsageSchema = new mongoose.Schema({
 
 const DailyUsage = mongoose.model('DailyUsage', dailyUsageSchema);
 
+// Contractor click schema -- one document per Call/Website/Map action
+const contractorClickSchema = new mongoose.Schema({
+  estimateId:     { type: mongoose.Schema.Types.ObjectId, ref: 'Estimate', index: true },
+  placeId:        { type: String, required: true, index: true },
+  contractorName: { type: String, required: true },
+  actionType:     { type: String, enum: ['call', 'website', 'map'], required: true },
+  jobType:        { type: String },
+  category:       { type: String },
+  region:         { type: String },
+  matchScore:     { type: Number },
+  timestamp:      { type: Date, default: Date.now, index: true }
+});
+
+const ContractorClick = mongoose.model('ContractorClick', contractorClickSchema);
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -140,6 +154,7 @@ const corsOptions = {
   preflightContinue: false
 };
 
+app.set('trust proxy', 1); // Trust Render's proxy so rate limiting identifies real client IPs
 app.use(cors(corsOptions));
 
 // Handle all OPTIONS preflight requests using the same corsOptions
@@ -170,6 +185,15 @@ const apiLimiter = rateLimit({
   // Using default keyGenerator which handles IPv6 correctly
 });
 
+// Contractor click limiter -- generous, lightweight write, no abuse potential
+const contractorClickLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { error: 'Too many requests', message: 'Please wait before trying again.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 const photoAnalysisLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 3, // Only 3 photo analysis requests per minute
@@ -182,16 +206,7 @@ const photoAnalysisLimiter = rateLimit({
   // Using default keyGenerator which handles IPv6 correctly
 });
 
-// Contractor click limiter — generous limit, lightweight write, no abuse potential
-const contractorClickLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30, // 30 clicks per minute per IP — covers testing and normal use
-  message: { error: 'Too many requests', message: 'Please wait before trying again.' },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-// Apply strict limiter to all API routes, then override for contractor-click
+// Apply rate limiter to all API routes
 app.use('/api/', apiLimiter);
 app.use('/api/contractor-click', contractorClickLimiter);
 
@@ -552,6 +567,35 @@ app.post('/api/location-cost', async (req, res) => {
   }
 });
 
+// Contractor click logging endpoint
+app.post('/api/contractor-click', async (req, res) => {
+  try {
+    const { estimateId, placeId, contractorName, actionType, jobType, category, region, matchScore } = req.body;
+    if (!placeId || !contractorName || !actionType) {
+      return res.status(400).json({ error: 'placeId, contractorName and actionType are required' });
+    }
+    if (!['call', 'website', 'map'].includes(actionType)) {
+      return res.status(400).json({ error: 'actionType must be call, website, or map' });
+    }
+    const click = new ContractorClick({
+      estimateId: estimateId || null,
+      placeId,
+      contractorName,
+      actionType,
+      jobType: jobType || null,
+      category: category || null,
+      region: region || null,
+      matchScore: matchScore != null ? Number(matchScore) : null
+    });
+    await click.save();
+    console.log(`✅ Contractor click logged: ${contractorName} | ${actionType} | ${region || 'unknown'}`);
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('❌ contractor-click error:', error);
+    return res.status(500).json({ error: 'Failed to log contractor click' });
+  }
+});
+
 // Search contractors endpoint
 app.post('/api/search-contractors', async (req, res) => {
   try {
@@ -817,9 +861,33 @@ const scoredContractors = contractors.map(contractor => {
     // Sort by match score
     scoredContractors.sort((a, b) => b.matchScore - a.matchScore);
 
-// Return top 5 contractors
+    // Enrich top 5 with Place Details -- Nearby Search doesn't return website or phone
+    const top5 = scoredContractors.slice(0, 5);
+    const enriched = await Promise.all(top5.map(async (contractor) => {
+      try {
+        const details = await googlePlacesClient.placeDetails({
+          params: {
+            place_id: contractor.placeId,
+            fields: ['website', 'formatted_phone_number', 'international_phone_number'],
+            key: process.env.GOOGLE_PLACES_API_KEY
+          }
+        });
+        const d = details.data.result;
+        return {
+          ...contractor,
+          website: d.website || contractor.website || null,
+          phoneNumber: d.formatted_phone_number || d.international_phone_number || contractor.phoneNumber || null
+        };
+      } catch (detailsError) {
+        console.warn(`Place Details failed for ${contractor.name}:`, detailsError.message);
+        return contractor;
+      }
+    }));
+    console.log(`Place Details enrichment complete for ${enriched.length} contractors`);
+
+// Return top 5 contractors (enriched with website and phone from Place Details)
 res.json({
-  contractors: scoredContractors.slice(0, 5),
+  contractors: enriched,
   searchQuery: fullQuery,
   totalFound: response.data.results.length,
   filters: filtersUsed,
