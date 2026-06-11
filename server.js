@@ -114,7 +114,7 @@ async function checkGlobalLimit() {
       remaining: Math.max(0, DAILY_LIMIT - usage.totalEstimates)
     };
   } catch (error) {
-    console.error('Error checking global limit:', error);
+    console.error('Error checking global limit is:', error);
     // If DB fails, allow request (fail open)
     return { limitReached: false, current: 0, limit: DAILY_LIMIT, remaining: DAILY_LIMIT };
   }
