@@ -522,6 +522,26 @@ function analyzeLocationCost(addressComponents, rawPostcode) {
   return { region: adminArea || 'Unknown', costMultiplier: 1.0, costReason: 'Standard UK rates' };
 }
 
+// ── Location cost lookup — postcode only, no Places call ──
+// Used by the frontend to resolve a multiplier and show an estimate immediately,
+// before the contractor search completes. Falls back to 1.0 for unknown postcodes.
+app.post('/api/location-cost', async (req, res) => {
+  try {
+    const { postcode } = req.body;
+    if (!postcode || typeof postcode !== 'string') {
+      return res.status(400).json({ error: 'postcode is required' });
+    }
+    const clean = postcode.trim().toUpperCase();
+    // Prefix lookup does not need addressComponents — pass empty array.
+    // Unknown postcodes fall through to the standard 1.0 multiplier.
+    const locationData = analyzeLocationCost([], clean);
+    return res.json({ locationData });
+  } catch (error) {
+    console.error('location-cost error:', error);
+    return res.status(500).json({ error: 'Failed to resolve location cost' });
+  }
+});
+
 // Search contractors endpoint
 app.post('/api/search-contractors', async (req, res) => {
   try {
@@ -538,13 +558,11 @@ app.post('/api/search-contractors', async (req, res) => {
     const postcodeValidation = await validateAndGeocodePostcode(userLocation);
     
     if (!postcodeValidation.valid) {
-      console.warn('⚠️ Postcode validation failed:', postcodeValidation.error);
-      console.warn('⚠️ Using fallback location data for testing');
-      
-      // TEMPORARY BYPASS: Use fallback location data
-      postcodeValidation.valid = true;
-      postcodeValidation.location = { lat: 51.5074, lng: -0.1278 }; // London default
-      postcodeValidation.formattedAddress = userLocation;
+      console.warn('⚠️ Postcode validation failed:', postcodeValidation.error, '| input:', userLocation);
+      return res.status(400).json({
+        error: 'invalid_postcode',
+        message: "We couldn't find that postcode. Please check it and try again."
+      });
     }
 
     const geocodingResponse = await googlePlacesClient.geocode({
@@ -975,7 +993,7 @@ app.post('/api/save-estimate', async (req, res) => {
 app.patch('/api/save-estimate/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { estimate, photoAnalysis, multipliers } = req.body;
+    const { estimate, photoAnalysis, multipliers, quality } = req.body;
 
     if (!id || !estimate) {
       return res.status(400).json({
@@ -990,13 +1008,14 @@ app.patch('/api/save-estimate/:id', async (req, res) => {
         $set: {
           estimate,
           multipliers,
+          ...(quality ? { quality } : {}),
           photoAnalysis: photoAnalysis ? {
             adjustment: photoAnalysis.adjustment,
             confidence: photoAnalysis.confidence,
             insights: photoAnalysis.insights,
             detectedIssues: photoAnalysis.detectedIssues,
             materials: photoAnalysis.materials
-          } : null
+          } : undefined
         }
       },
       { new: true, runValidators: false }
