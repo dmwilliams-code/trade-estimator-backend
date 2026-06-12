@@ -45,15 +45,18 @@ const DailyUsage = mongoose.model('DailyUsage', dailyUsageSchema);
 
 // Contractor click schema -- one document per Call/Website/Map action
 const contractorClickSchema = new mongoose.Schema({
-  estimateId:     { type: mongoose.Schema.Types.ObjectId, ref: 'Estimate', index: true },
-  placeId:        { type: String, required: true, index: true },
-  contractorName: { type: String, required: true },
-  actionType:     { type: String, enum: ['call', 'website', 'map'], required: true },
-  jobType:        { type: String },
-  category:       { type: String },
-  region:         { type: String },
-  matchScore:     { type: Number },
-  timestamp:      { type: Date, default: Date.now, index: true }
+  estimateId:       { type: mongoose.Schema.Types.ObjectId, ref: 'Estimate', index: true },
+  placeId:          { type: String, required: true, index: true },
+  contractorName:   { type: String, required: true },
+  actionType:       { type: String, enum: ['call', 'website', 'map', 'shown', 'contact_requested'], required: true },
+  jobType:          { type: String },
+  category:         { type: String },
+  region:           { type: String },
+  matchScore:       { type: Number },
+  estimateValue:    { type: Number },        // estimate total at point of interaction
+  postcodeDistrict: { type: String },        // outward code only, e.g. "SW1A"
+  abVariant:        { type: String },        // blur/control from A/B test session
+  timestamp:        { type: Date, default: Date.now, index: true }
 });
 
 const ContractorClick = mongoose.model('ContractorClick', contractorClickSchema);
@@ -570,22 +573,25 @@ app.post('/api/location-cost', async (req, res) => {
 // Contractor click logging endpoint
 app.post('/api/contractor-click', async (req, res) => {
   try {
-    const { estimateId, placeId, contractorName, actionType, jobType, category, region, matchScore } = req.body;
+    const { estimateId, placeId, contractorName, actionType, jobType, category, region, matchScore, estimateValue, postcodeDistrict, abVariant } = req.body;
     if (!placeId || !contractorName || !actionType) {
       return res.status(400).json({ error: 'placeId, contractorName and actionType are required' });
     }
-    if (!['call', 'website', 'map'].includes(actionType)) {
-      return res.status(400).json({ error: 'actionType must be call, website, or map' });
+    if (!['call', 'website', 'map', 'shown', 'contact_requested'].includes(actionType)) {
+      return res.status(400).json({ error: 'actionType must be call, website, map, shown, or contact_requested' });
     }
     const click = new ContractorClick({
-      estimateId: estimateId || null,
+      estimateId:       estimateId || null,
       placeId,
       contractorName,
       actionType,
-      jobType: jobType || null,
-      category: category || null,
-      region: region || null,
-      matchScore: matchScore != null ? Number(matchScore) : null
+      jobType:          jobType || null,
+      category:         category || null,
+      region:           region || null,
+      matchScore:       matchScore != null ? Number(matchScore) : null,
+      estimateValue:    estimateValue != null ? Number(estimateValue) : null,
+      postcodeDistrict: postcodeDistrict || null,
+      abVariant:        abVariant || null,
     });
     await click.save();
     console.log(`✅ Contractor click logged: ${contractorName} | ${actionType} | ${region || 'unknown'}`);

@@ -19,7 +19,9 @@ router.post('/', async (req, res) => {
       userLocation,
       timestamp,
       estimateData,  // Optional estimate data to include in email
-      contractors    // Optional contractor list to include in email
+      contractors,   // Optional contractor list to include in email
+      estimateValue, // Estimate total at point of lead capture
+      abVariant      // A/B test variant — 'blur' or 'control'
     } = req.body;
 
     // Validation — only email is required
@@ -43,6 +45,8 @@ router.post('/', async (req, res) => {
       status: 'new',
       source: source || 'web-app',
       userLocation: userLocation || undefined,
+      estimateValue: estimateValue || null,
+      abVariant: abVariant || null,
       createdAt: timestamp ? new Date(timestamp) : new Date()
     });
 

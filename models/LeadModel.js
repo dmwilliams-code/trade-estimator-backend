@@ -83,6 +83,13 @@ const leadSchema = new mongoose.Schema({
     type: Number,
     default: null
   },
+
+  // A/B test variant assigned at session start — 'blur' or 'control'
+  // Populated during blur gate experiment (Jun 2026). Null on pre-experiment leads.
+  abVariant: {
+    type: String,
+    default: null
+  },
   
   contractorAssigned: {
     type: mongoose.Schema.Types.ObjectId,
@@ -119,6 +126,7 @@ leadSchema.index({ createdAt: -1 });
 leadSchema.index({ status: 1 });
 leadSchema.index({ source: 1 });
 leadSchema.index({ category: 1, status: 1 });
+leadSchema.index({ abVariant: 1 });
 
 // Text index for searching
 leadSchema.index({ email: 'text', jobName: 'text' });
