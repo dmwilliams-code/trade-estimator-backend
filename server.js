@@ -937,7 +937,8 @@ app.post('/api/save-estimate', async (req, res) => {
       estimate,
       multipliers,
       contractors,
-      source
+      source,
+      abVariant
     } = req.body;
 
     // Validation
@@ -1016,6 +1017,9 @@ app.post('/api/save-estimate', async (req, res) => {
       
       // Source article (from ?ref= param — not personal data)
       source: source || null,
+
+      // A/B blur gate test variant — 'blur' or 'control'. Null on pre-experiment estimates.
+      abVariant: abVariant || null,
 
       // Contractors (top 5 only - public business data)
       contractorsShown: contractors ? contractors.slice(0, 5).map(c => ({

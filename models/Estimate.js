@@ -103,6 +103,12 @@ const estimateSchema = new mongoose.Schema({
     trim: true
   },
 
+  // A/B blur gate test variant — 'blur' or 'control'. Null on pre-experiment estimates.
+  abVariant: {
+    type: String,
+    default: null
+  },
+
   // Sharing & engagement tracking
   sharedAt: {
     type: Date,
@@ -131,6 +137,7 @@ estimateSchema.index({ category: 1, jobType: 1 }); // Filter by job type
 estimateSchema.index({ 'locationData.region': 1 }); // Filter by region
 estimateSchema.index({ projectSize: 1 }); // Filter by project size
 estimateSchema.index({ source: 1 });       // Filter by source article
+estimateSchema.index({ abVariant: 1 });    // Filter by A/B test variant
 estimateSchema.index({ sharedAt: 1 });     // Filter shared estimates
 
 // Virtual for easy display of project size
