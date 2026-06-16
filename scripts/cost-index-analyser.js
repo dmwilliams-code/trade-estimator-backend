@@ -27,14 +27,6 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const Anthropic = require('@anthropic-ai/sdk');
 
-// ─── FIRST-MONDAY GUARD ───────────────────────────────────────────────────────
-
-function isFirstMondayOfMonth() {
-  const now = new Date();
-  // Must be a Monday (getDay() === 1) and within the first 7 days
-  return now.getDay() === 1 && now.getDate() <= 7;
-}
-
 // ─── DATE HELPERS ─────────────────────────────────────────────────────────────
 
 function getPreviousMonthRange() {
@@ -217,17 +209,7 @@ RULES — follow every one without exception:
 async function main() {
   console.log('🗓  Cost Index Analyser starting...');
 
-  // First-Monday guard (bypassed when FORCE_RUN=true)
-  const forceRun = process.env.FORCE_RUN === 'true';
-  if (!forceRun && !isFirstMondayOfMonth()) {
-    console.log('⏭  Not the first Monday of the month — exiting early.');
-    process.exit(0);
-  }
-  if (forceRun) {
-    console.log('⚠️  FORCE_RUN=true — skipping first-Monday guard.');
-  } else {
-    console.log('✅ First Monday confirmed — running Cost Index build.');
-  }
+  console.log('✅ Running Cost Index build.');
 
   if (!process.env.MONGODB_URI)      throw new Error('MONGODB_URI env var not set');
   if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY env var not set');
@@ -242,15 +224,10 @@ async function main() {
   const monthLabel     = getMonthLabel(start);
   console.log(`📅 Building index for: ${monthLabel}`);
 
-  // Check if this month's index already exists (idempotency guard, bypassed when FORCE_RUN=true)
+  // Overwrite any existing index for this month on each run
   const existing = await CostIndex.findOne({ monthStart: start });
-  if (existing && !forceRun) {
-    console.log(`⏭  Index for ${monthLabel} already exists — exiting. Delete the document to regenerate.`);
-    await mongoose.disconnect();
-    process.exit(0);
-  }
-  if (existing && forceRun) {
-    console.log(`⚠️  FORCE_RUN=true — overwriting existing index for ${monthLabel}.`);
+  if (existing) {
+    console.log(`♻️  Overwriting existing index for ${monthLabel}.`);
     await CostIndex.deleteOne({ monthStart: start });
   }
 
