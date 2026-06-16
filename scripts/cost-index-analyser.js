@@ -78,15 +78,15 @@ async function fetchIndexData(Estimate, start, end) {
 
     // Top job types by volume with cost and ratio breakdown
     Estimate.aggregate([
-      { $match: { createdAt: { $gte: start, $lt: end }, total: { $gt: 0 } } },
+      { $match: { createdAt: { $gte: start, $lt: end }, 'estimate.total': { $gt: 0 } } },
       { $group: {
         _id:          '$jobType',
         count:        { $sum: 1 },
-        avgTotal:     { $avg: '$total' },
-        avgLow:       { $avg: '$low' },
-        avgHigh:      { $avg: '$high' },
-        avgLabour:    { $avg: '$labour' },
-        avgMaterials: { $avg: '$materials' },
+        avgTotal:     { $avg: '$estimate.total' },
+        avgLow:       { $avg: '$estimate.low' },
+        avgHigh:      { $avg: '$estimate.high' },
+        avgLabour:    { $avg: '$estimate.labour' },
+        avgMaterials: { $avg: '$estimate.materials' },
       }},
       { $sort: { count: -1 } },
       { $limit: 5 },
@@ -96,13 +96,13 @@ async function fetchIndexData(Estimate, start, end) {
     Estimate.aggregate([
       { $match: {
         createdAt: { $gte: start, $lt: end },
-        total: { $gt: 0 },
+        'estimate.total': { $gt: 0 },
         postcodeDistrict: { $exists: true, $ne: null, $ne: '' },
       }},
       { $group: {
         _id:      '$postcodeDistrict',
         count:    { $sum: 1 },
-        avgTotal: { $avg: '$total' },
+        avgTotal: { $avg: '$estimate.total' },
       }},
       { $sort: { count: -1 } },
       { $limit: 10 },
@@ -111,19 +111,18 @@ async function fetchIndexData(Estimate, start, end) {
     // Overall labour/materials ratio
     Estimate.aggregate([
       { $match: {
-        createdAt: { $gte: start, $lt: end },
-        total:     { $gt: 0 },
-        labour:    { $gt: 0 },
-        materials: { $gt: 0 },
+        createdAt:         { $gte: start, $lt: end },
+        'estimate.total':  { $gt: 0 },
+        'estimate.labour': { $gt: 0 },
       }},
       { $group: {
         _id:          null,
-        avgLabourPct: { $avg: { $divide: ['$labour', '$total'] } },
+        avgLabourPct: { $avg: { $divide: ['$estimate.labour', '$estimate.total'] } },
       }},
     ]),
 
     // Total estimate count
-    Estimate.countDocuments({ createdAt: { $gte: start, $lt: end } }),
+    Estimate.countDocuments({ createdAt: { $gte: start, $lt: end }, 'estimate.total': { $gt: 0 } }),
   ]);
 
   // Shape job types — add labour % per job type
