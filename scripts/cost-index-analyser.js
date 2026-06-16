@@ -178,7 +178,7 @@ This paragraph appears on a public-facing web page read by UK homeowners and jou
 
 DATA:
 - Total estimates this month: ${indexData.totalEstimates}
-- Top job types by volume: ${indexData.topJobTypes.map(j => `${j.jobType} (${j.count} estimates, avg £${j.avgTotal?.toLocaleString()})`).join(', ')}
+- Top job types by volume (share of total, no cost figures): ${indexData.topJobTypes.map(j => `${j.jobType} (${j.count} estimates, ${Math.round((j.count / indexData.totalEstimates) * 100)}% of total)`).join(', ')}
 - Top regions by volume: ${indexData.topRegions.slice(0, 5).map(r => `${r.district} (${r.count} estimates)`).join(', ')}
 - Average labour share across all estimates: ${indexData.labourMaterialsRatio.avgLabourPct ? Math.round(indexData.labourMaterialsRatio.avgLabourPct * 100) + '%' : 'not available'}
 - ${momContext}
@@ -186,13 +186,14 @@ DATA:
 RULES — follow every one without exception:
 1. Output only the paragraph. No title, no preamble, no sign-off.
 2. Exactly 80 to 100 words.
-3. Start with a specific number from the data (estimate count, a cost figure, or a percentage).
+3. Start with a specific number from the data such as the total estimate count, a percentage share, or a regional demand figure. Do NOT reference specific cost or price figures.
 4. Make one clear, definitive claim about what the data shows. No hedging. No "may suggest" or "could indicate".
 5. Include one month-on-month comparison if previous data is available.
 6. End with one sentence relevant to homeowners planning a project.
 7. No em dashes. Use commas or full stops instead.
 8. No "it is worth noting", "importantly", "it is interesting", or similar filler phrases.
-9. Plain British English. No jargon.`;
+9. Plain British English. No jargon.
+10. Do NOT mention specific cost or price figures (no pound signs, no monetary amounts). Focus on demand patterns, job type mix, and regional trends only.`;
 
   const message = await client.messages.create({
     model:      'claude-sonnet-4-6',
