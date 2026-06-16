@@ -1491,6 +1491,8 @@ app.get('/api/admin/indexing-status', async (req, res) => {
 // GET  /api/admin/annotations  — retrieve annotations (supports ?since=ISO&type=seo)
 
 const Annotation = require('./models/Annotation');
+const costIndexRoutes = require('./routes/costIndexRoutes');
+app.use('/api/cost-index', costIndexRoutes);
 
 // POST — log a new intervention
 app.post('/api/admin/annotations', async (req, res) => {
