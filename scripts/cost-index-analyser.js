@@ -217,13 +217,17 @@ RULES — follow every one without exception:
 async function main() {
   console.log('🗓  Cost Index Analyser starting...');
 
-  // First-Monday guard
-  if (!isFirstMondayOfMonth()) {
+  // First-Monday guard (bypassed when FORCE_RUN=true)
+  const forceRun = process.env.FORCE_RUN === 'true';
+  if (!forceRun && !isFirstMondayOfMonth()) {
     console.log('⏭  Not the first Monday of the month — exiting early.');
     process.exit(0);
   }
-
-  console.log('✅ First Monday confirmed — running Cost Index build.');
+  if (forceRun) {
+    console.log('⚠️  FORCE_RUN=true — skipping first-Monday guard.');
+  } else {
+    console.log('✅ First Monday confirmed — running Cost Index build.');
+  }
 
   if (!process.env.MONGODB_URI)      throw new Error('MONGODB_URI env var not set');
   if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY env var not set');
@@ -238,12 +242,16 @@ async function main() {
   const monthLabel     = getMonthLabel(start);
   console.log(`📅 Building index for: ${monthLabel}`);
 
-  // Check if this month's index already exists (idempotency guard)
+  // Check if this month's index already exists (idempotency guard, bypassed when FORCE_RUN=true)
   const existing = await CostIndex.findOne({ monthStart: start });
-  if (existing) {
+  if (existing && !forceRun) {
     console.log(`⏭  Index for ${monthLabel} already exists — exiting. Delete the document to regenerate.`);
     await mongoose.disconnect();
     process.exit(0);
+  }
+  if (existing && forceRun) {
+    console.log(`⚠️  FORCE_RUN=true — overwriting existing index for ${monthLabel}.`);
+    await CostIndex.deleteOne({ monthStart: start });
   }
 
   // Fetch index data
