@@ -125,10 +125,11 @@ async function fetchIndexData(Estimate, start, end) {
     Estimate.countDocuments({ createdAt: { $gte: start, $lt: end }, 'estimate.total': { $gt: 0 } }),
   ]);
 
-  // Shape job types — add labour % per job type
+  // Shape job types — add labour % and share of total estimates per job type
   const shapedJobTypes = topJobTypes.map(j => ({
     jobType:      j._id,
     count:        j.count,
+    pct:          Math.round((j.count / totalResult) * 100),
     avgTotal:     Math.round(j.avgTotal),
     avgLow:       Math.round(j.avgLow || 0),
     avgHigh:      Math.round(j.avgHigh || 0),
