@@ -21,7 +21,9 @@ router.post('/', async (req, res) => {
       estimateData,  // Optional estimate data to include in email
       contractors,   // Optional contractor list to include in email
       estimateValue, // Estimate total at point of lead capture
-      abVariant      // A/B test variant — 'blur' or 'control'
+      abVariant,     // A/B test variant — 'blur' or 'control'
+      propertyValue, // ROI tool: self-reported or postcode-estimated property value in GBP
+      topRenovation  // ROI tool: highest-ranked renovation key (e.g. 'loft-conversion')
     } = req.body;
 
     // Validation — only email is required
@@ -47,6 +49,8 @@ router.post('/', async (req, res) => {
       userLocation: userLocation || undefined,
       estimateValue: estimateValue || null,
       abVariant: abVariant || null,
+      propertyValue: propertyValue || null,
+      topRenovation: topRenovation || null,
       createdAt: timestamp ? new Date(timestamp) : new Date()
     });
 

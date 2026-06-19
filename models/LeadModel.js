@@ -90,6 +90,19 @@ const leadSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+
+  // ROI tool fields — populated when source is 'roi-tool'
+  // propertyValue: self-reported or postcode-estimated property value in GBP
+  // topRenovation: the highest-ranked renovation key at point of lead capture (e.g. 'loft-conversion')
+  propertyValue: {
+    type: Number,
+    default: null
+  },
+
+  topRenovation: {
+    type: String,
+    default: null
+  },
   
   contractorAssigned: {
     type: mongoose.Schema.Types.ObjectId,

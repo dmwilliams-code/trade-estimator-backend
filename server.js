@@ -452,7 +452,7 @@ function analyzeLocationCost(addressComponents, rawPostcode) {
   const GREATER_LONDON_AREAS = ['E', 'N', 'NW', 'SE', 'SW', 'W', 'BR', 'CR', 'DA', 'EN', 'HA', 'IG', 'KT', 'RM', 'SM', 'TN', 'TW', 'UB'];
 
   // London-adjacent premium cities (1.25×)
-  const TIER_125_AREAS = ['SL', 'RG', 'OX', 'CB', 'WD', 'BN', 'BA'];
+  const TIER_125_AREAS = ['SL', 'RG', 'OX', 'CB', 'WD', 'BN', 'BA', 'AL', 'GU', 'HP', 'CM', 'RH', 'SG'];
 
   // Major cities (1.15×)
   const TIER_115_AREAS = [
@@ -485,13 +485,13 @@ function analyzeLocationCost(addressComponents, rawPostcode) {
   ];
 
   // Secondary cities (1.05×)
-  const TIER_105_AREAS = ['CF', 'DD', 'EX', 'NE', 'NG', 'NR', 'SN', 'YO'];
+  const TIER_105_AREAS = ['CF', 'DD', 'EX', 'NE', 'NG', 'NR', 'SN', 'YO', 'DT', 'ME', 'SP', 'SS', 'TQ', 'TR', 'WR', 'HG'];
 
   // National average cities (1.0×)
-  const TIER_100_AREAS = ['CO', 'CV', 'DE', 'DY', 'FY', 'IP', 'LE', 'NP', 'PE', 'PL', 'PR', 'SA', 'SR', 'TF', 'WV'];
+  const TIER_100_AREAS = ['CO', 'CV', 'DE', 'DY', 'FY', 'IP', 'LE', 'NP', 'PE', 'PL', 'PR', 'SA', 'SR', 'TF', 'WV', 'TA', 'HR', 'NN', 'LA', 'LD', 'LL', 'LN', 'WS', 'CA', 'HD'];
 
   // Below-average areas (0.95×)
-  const TIER_095_AREAS = ['DL', 'DN', 'HU', 'ST', 'TS'];
+  const TIER_095_AREAS = ['DL', 'DN', 'HU', 'ST', 'TS', 'BB', 'DH', 'HX'];
 
   const parts = getPostcodeParts(rawPostcode);
 
