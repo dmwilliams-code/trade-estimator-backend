@@ -1622,6 +1622,103 @@ app.patch('/api/admin/annotations/:id', async (req, res) => {
 // ============================================
 
 // ============================================
+// GENERIC COLLECTION EXPORT — pull any MongoDB collection
+// ============================================
+
+// GET — list all collection names available to export
+// e.g. /api/admin/collections?secret=xxxxxx
+app.get('/api/admin/collections', async (req, res) => {
+  const providedSecret = req.headers['x-reindex-secret'] || req.query.secret;
+  if (!providedSecret || providedSecret !== REINDEX_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    return res.json({
+      success: true,
+      collections: collections.map(c => c.name).sort()
+    });
+  } catch (error) {
+    console.error('❌ Error listing collections:', error);
+    return res.status(500).json({ error: 'Failed to list collections' });
+  }
+});
+
+// GET — export documents from any named collection
+// e.g. /api/admin/export/contractorclicks?secret=xxxxxx
+// Optional query params:
+//   ?since=2026-06-13       — filter on createdAt or timestamp >= this date (whichever field exists on the doc)
+//   ?limit=1000             — max docs returned (default 1000, hard cap 20000)
+//   ?filter={"actionType":"contact_requested"}  — raw JSON filter, merged with the since filter
+app.get('/api/admin/export/:collection', async (req, res) => {
+  const providedSecret = req.headers['x-reindex-secret'] || req.query.secret;
+  if (!providedSecret || providedSecret !== REINDEX_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const { collection } = req.params;
+    const { since, limit = 1000, filter } = req.query;
+
+    // Only allow real, existing collections - prevents querying arbitrary/system collections
+    const existing = await mongoose.connection.db.listCollections({ name: collection }).toArray();
+    if (existing.length === 0) {
+      return res.status(404).json({
+        error: `Collection "${collection}" not found`,
+        hint: 'Use /api/admin/collections to see available collection names'
+      });
+    }
+
+    let query = {};
+    if (filter) {
+      try {
+        query = JSON.parse(filter);
+      } catch (e) {
+        return res.status(400).json({ error: 'filter must be valid JSON' });
+      }
+    }
+
+    if (since) {
+      const sinceDate = new Date(since);
+      if (isNaN(sinceDate.getTime())) {
+        return res.status(400).json({ error: 'since must be a valid date' });
+      }
+      // Try createdAt first, fall back to timestamp - most schemas in this app use one or the other
+      query.$or = [
+        { createdAt: { $gte: sinceDate } },
+        { timestamp: { $gte: sinceDate } }
+      ];
+    }
+
+    const safeLimit = Math.min(parseInt(limit) || 1000, 20000);
+
+    const docs = await mongoose.connection.db
+      .collection(collection)
+      .find(query)
+      .limit(safeLimit)
+      .toArray();
+
+    console.log(`📤 Exported ${docs.length} docs from "${collection}"`);
+
+    return res.json({
+      success: true,
+      collection,
+      count: docs.length,
+      [collection]: docs
+    });
+
+  } catch (error) {
+    console.error(`❌ Error exporting collection "${req.params.collection}":`, error);
+    return res.status(500).json({ error: 'Failed to export collection' });
+  }
+});
+
+// ============================================
+// END GENERIC COLLECTION EXPORT
+// ============================================
+
+// ============================================
 // BLOG — reaction votes + email subscribers
 // ============================================
 
