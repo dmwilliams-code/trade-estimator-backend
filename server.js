@@ -56,6 +56,7 @@ const contractorClickSchema = new mongoose.Schema({
   estimateValue:    { type: Number },        // estimate total at point of interaction
   postcodeDistrict: { type: String },        // outward code only, e.g. "SW1A"
   abVariant:        { type: String },        // blur/control from A/B test session
+  leadId:           { type: mongoose.Schema.Types.ObjectId, ref: 'Lead', default: null, index: true }, // joins to Leads collection, contact_requested only
   timestamp:        { type: Date, default: Date.now, index: true }
 });
 
@@ -573,7 +574,7 @@ app.post('/api/location-cost', async (req, res) => {
 // Contractor click logging endpoint
 app.post('/api/contractor-click', async (req, res) => {
   try {
-    const { estimateId, placeId, contractorName, actionType, jobType, category, region, matchScore, estimateValue, postcodeDistrict, abVariant } = req.body;
+    const { estimateId, placeId, contractorName, actionType, jobType, category, region, matchScore, estimateValue, postcodeDistrict, abVariant, leadId } = req.body;
     if (!placeId || !contractorName || !actionType) {
       return res.status(400).json({ error: 'placeId, contractorName and actionType are required' });
     }
@@ -592,6 +593,7 @@ app.post('/api/contractor-click', async (req, res) => {
       estimateValue:    estimateValue != null ? Number(estimateValue) : null,
       postcodeDistrict: postcodeDistrict || null,
       abVariant:        abVariant || null,
+      leadId:           leadId || null,
     });
     await click.save();
     console.log(`✅ Contractor click logged: ${contractorName} | ${actionType} | ${region || 'unknown'}`);
