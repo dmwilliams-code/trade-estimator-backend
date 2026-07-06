@@ -57,7 +57,12 @@ const contractorRegistrationSchema = new mongoose.Schema({
 });
 
 contractorRegistrationSchema.index({ status: 1 });
-contractorRegistrationSchema.index({ serviceDistricts: 1, jobTypes: 1 });
+// Separate single-field indexes - MongoDB rejects a compound index across two
+// array fields ("cannot index parallel arrays"), so serviceDistricts and
+// jobTypes can't be indexed together. Matching queries filter on one index
+// and narrow by the other field in memory, which is fine at this volume.
+contractorRegistrationSchema.index({ serviceDistricts: 1 });
+contractorRegistrationSchema.index({ jobTypes: 1 });
 contractorRegistrationSchema.index({ email: 1 });
 
 module.exports = mongoose.model('ContractorRegistration', contractorRegistrationSchema);
