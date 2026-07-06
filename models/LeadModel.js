@@ -91,6 +91,15 @@ const leadSchema = new mongoose.Schema({
     default: null
   },
 
+  // Job Feed consent (Layer 1: named contractor, Layer 2: feed). Populated only
+  // for source: 'contractor-contact-request'. copyVersion is shared across both
+  // layers since they are shown in the same modal at the same moment.
+  consent: {
+    namedAt: { type: Date, default: null },
+    feedAt: { type: Date, default: null },
+    copyVersion: { type: String, default: null }
+  },
+
   // ROI tool fields — populated when source is 'roi-tool'
   // propertyValue: self-reported or postcode-estimated property value in GBP
   // topRenovation: the highest-ranked renovation key at point of lead capture (e.g. 'loft-conversion')

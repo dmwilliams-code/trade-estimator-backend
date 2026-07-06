@@ -922,6 +922,46 @@ const EstimateReview = require('./models/EstimateReview');
 const leadsRouter = require('./routes/leadsRoutes');
 app.use('/api/leads', leadsRouter);
 
+// Import and mount contractor registration routes (/for-contractors founding member form)
+const contractorRegistrationsRouter = require('./routes/contractorRegistrationsRoutes');
+app.use('/api/contractor-registrations', contractorRegistrationsRouter);
+
+const Job = require('./models/Job');
+
+// Job Feed teaser aggregate - counts of open jobs by region over the last 30 days.
+// Counts only, no job details - this is the /for-contractors registration nudge.
+// Suppressed under 3 to avoid signalling thin volume in any one region.
+app.get('/api/jobs/region-counts', async (req, res) => {
+  try {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const counts = await Job.aggregate([
+      {
+        $match: {
+          status: 'open',
+          createdAt: { $gte: thirtyDaysAgo }
+        }
+      },
+      {
+        $group: { _id: '$region', count: { $sum: 1 } }
+      },
+      {
+        $match: { count: { $gte: 3 } }
+      },
+      {
+        $project: { _id: 0, region: '$_id', count: 1 }
+      },
+      { $sort: { count: -1 } }
+    ]);
+
+    res.json({ success: true, counts });
+  } catch (error) {
+    console.error('❌ Error fetching job region counts:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch region counts' });
+  }
+});
+
 // Save estimate endpoint - UPDATED to handle projectSize
 app.post('/api/save-estimate', async (req, res) => {
   try {

@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const Lead = require('../models/LeadModel');
+const Job = require('../models/Job');
 const { sendWelcomeEmail } = require('../services/emailService');
+const { bandForEstimateValue } = require('../utils/budgetBands');
+
+const JOB_EXPIRY_DAYS = 30;
 
 // ============================================
 // POST /api/leads - Create new lead
@@ -23,7 +27,11 @@ router.post('/', async (req, res) => {
       estimateValue, // Estimate total at point of lead capture
       abVariant,     // A/B test variant — 'blur' or 'control'
       propertyValue, // ROI tool: self-reported or postcode-estimated property value in GBP
-      topRenovation  // ROI tool: highest-ranked renovation key (e.g. 'loft-conversion')
+      topRenovation, // ROI tool: highest-ranked renovation key (e.g. 'loft-conversion')
+      estimateId,       // Job Feed: ref to the anonymous Estimate, for provenance only
+      postcodeDistrict, // Job Feed: outward postcode district, e.g. 'LS6'
+      region,           // Job Feed: region name, consistent with locationData.region elsewhere
+      consent           // Job Feed: { namedAt, feedAt, copyVersion } — only sent by contact-request flow
     } = req.body;
 
     // Validation — only email is required
@@ -51,11 +59,48 @@ router.post('/', async (req, res) => {
       abVariant: abVariant || null,
       propertyValue: propertyValue || null,
       topRenovation: topRenovation || null,
+      consent: consent ? {
+        namedAt: consent.namedAt || null,
+        feedAt: consent.feedAt || null,
+        copyVersion: consent.copyVersion || null
+      } : undefined,
       createdAt: timestamp ? new Date(timestamp) : new Date()
     });
 
     // Save to database
     const savedLead = await leadDocument.save();
+
+    // Job Feed: a contact request with Layer 2 (feed) consent also becomes an
+    // anonymised job posting. Best-effort — a Job creation failure must not
+    // block the Lead response, since the Lead is the record of the homeowner's
+    // request either way.
+    if (consent?.feedAt && category && jobType && postcodeDistrict && region) {
+      try {
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + JOB_EXPIRY_DAYS);
+
+        await Job.create({
+          jobType,
+          category: category.toLowerCase(),
+          postcodeDistrict,
+          region,
+          budgetBand: bandForEstimateValue(estimateValue),
+          qualityTier: quality ? quality.toLowerCase() : 'standard',
+          leadId: savedLead._id,
+          estimateId: estimateId || null,
+          abVariant: abVariant || null,
+          consent: {
+            namedAt: consent.namedAt || new Date(),
+            feedAt: consent.feedAt,
+            copyVersion: consent.copyVersion || null
+          },
+          expiresAt
+        });
+        console.log('✅ Job posted to feed:', { leadId: savedLead._id, jobType, region });
+      } catch (jobError) {
+        console.error('❌ Job creation failed (Lead still saved):', jobError.message);
+      }
+    }
 
     console.log('✅ Lead captured:', {
       leadId: savedLead._id,
