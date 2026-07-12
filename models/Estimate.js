@@ -47,10 +47,46 @@ const estimateSchema = new mongoose.Schema({
     index: true
   },
   locationData: {
-    region: String,          // Just "London", "Manchester", etc.
+    // Controlled region name from the AREA_REGIONS map in server.js. Null when the
+    // postcode could not be resolved. Previously this was a free String written to
+    // from three different places (bare postcode letters, Google postal_town values,
+    // and proper region names), which is why the collection contains 'S', 'B',
+    // 'Whitley Bay' and 'Unknown' alongside 'Greater London'.
+    region: {
+      type: String,
+      default: null
+    },
+    // Stable key matching regionalCostData.json. Null where the postcode area has no
+    // dedicated region page. This is the field to group by for regional reporting.
+    regionSlug: {
+      type: String,
+      default: null,
+      index: true
+    },
+    // Outward code only, e.g. "SW1A". NOT personal data: an outward code covers
+    // thousands of addresses. locationHash is one-way and cannot be grouped by area,
+    // so this is what regional demand analysis for contractor outreach reads.
+    district: {
+      type: String,
+      default: null,
+      index: true
+    },
     costMultiplier: Number,
-    costReason: String
-    // NO: city, district, postcode, or specific location
+    costReason: String,
+    // False when the postcode was valid but could not be mapped to a region. The
+    // estimate is still saved at the 1.0 national average so volume is preserved,
+    // but these records must be excluded from regional reporting and the cost index.
+    regionResolved: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    resolutionReason: {
+      type: String,
+      enum: ['matched', 'uncovered_area', 'out_of_scope', 'invalid_input', null],
+      default: null
+    }
+    // STILL NOT STORED: city, full postcode, specific location
   },
   
   // Quality Selection
@@ -135,6 +171,7 @@ const estimateSchema = new mongoose.Schema({
 estimateSchema.index({ createdAt: -1 }); // Sort by date
 estimateSchema.index({ category: 1, jobType: 1 }); // Filter by job type
 estimateSchema.index({ 'locationData.region': 1 }); // Filter by region
+estimateSchema.index({ 'locationData.regionSlug': 1, createdAt: -1 }); // Regional demand over time
 estimateSchema.index({ projectSize: 1 }); // Filter by project size
 estimateSchema.index({ source: 1 });       // Filter by source article
 estimateSchema.index({ abVariant: 1 });    // Filter by A/B test variant
@@ -160,7 +197,7 @@ estimateSchema.methods.getSummary = function() {
     id: this._id,
     job: this.jobName,
     projectSize: this.projectSizeDisplay,
-    region: this.locationData?.region || 'Unknown',
+    region: this.locationData?.region || 'Unresolved',
     estimateTotal: this.estimate?.total
       ? `£${this.estimate.total.toLocaleString()}`
       : 'N/A',

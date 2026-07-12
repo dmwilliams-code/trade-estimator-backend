@@ -426,131 +426,250 @@ async function validateAndGeocodePostcode(postcode) {
   }
 }
 
-// Location-based cost analysis
-// Primary lookup: outward postcode prefix → multiplier (covers all 52 UK regions in regionalCostData.json)
-// Fallback: postal_town string match for any postcode areas not explicitly mapped
-function analyzeLocationCost(addressComponents, rawPostcode) {
+// ── Postcode parsing ─────────────────────────────────────────────────────────
+// Single source of truth for postcode handling. The previous implementation did
+// outward = postcode.replace(/\s+/g,'').slice(0, -3), which silently assumes the
+// input is a complete postcode. It is not: the frontend debounce fires on partial
+// input, so "BS1 5" resolved to area "B" (Birmingham) and "BS1" resolved to
+// nothing at all. Both saved. Never slice blindly again.
+//
+// Returns { valid: false, reason } or
+//         { valid: true, complete, area, district, districtNum, formatted }
+//
+// An outward code on its own (BS1, SW1A) fully resolves a multiplier, so it is
+// accepted as valid but incomplete. Everything else is rejected, not guessed at.
+const OUTWARD_REGEX = /^[A-Z]{1,2}[0-9][A-Z0-9]?$/;
+const INWARD_REGEX  = /^[0-9][A-Z]{2}$/;
 
-  // ── Postcode prefix lookup ──────────────────────────────────────────────────
-  // Extract area (leading letters) and numeric district from outward code
-  // e.g. SW1A 1AA → area=SW, district=SW1 | SW11 1AA → area=SW, district=SW11
-  function getPostcodeParts(postcode) {
-    if (!postcode || typeof postcode !== 'string') return null;
-    const outward = postcode.replace(/\s+/g, '').toUpperCase().slice(0, -3);
-    if (!outward) return null;
-    const areaMatch = outward.match(/^([A-Z]+)/);
-    if (!areaMatch) return null;
-    const area = areaMatch[1];
-    const districtNum = outward.replace(/[A-Z]$/, ''); // strip trailing sector letter
-    return { area, districtNum };
-  }
+function parsePostcode(input) {
+  if (!input || typeof input !== 'string') return { valid: false, reason: 'empty' };
 
-  // Central London specific districts (must check before generic Greater London areas)
-  const CENTRAL_LONDON_AREAS = ['EC', 'WC'];
-  const CENTRAL_LONDON_DISTRICTS = ['W1', 'SW1', 'SW3', 'SW5', 'SW7', 'SW10', 'SE1', 'N1', 'NW1', 'NW8'];
+  const raw = input.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!raw) return { valid: false, reason: 'empty' };
 
-  // Greater London (all remaining London outward code areas)
-  const GREATER_LONDON_AREAS = ['E', 'N', 'NW', 'SE', 'SW', 'W', 'BR', 'CR', 'DA', 'EN', 'HA', 'IG', 'KT', 'RM', 'SM', 'TN', 'TW', 'UB'];
-
-  // London-adjacent premium cities (1.25×)
-  const TIER_125_AREAS = ['SL', 'RG', 'OX', 'CB', 'WD', 'BN', 'BA', 'AL', 'GU', 'HP', 'CM', 'RH', 'SG'];
-
-  // Major cities (1.15×)
-  const TIER_115_AREAS = [
-    'AB',       // Aberdeen
-    'B',        // Birmingham
-    'BD',       // Bradford (Leeds metro)
-    'BH',       // Bournemouth
-    'BL',       // Bolton (Greater Manchester)
-    'BS',       // Bristol
-    'CH',       // Chester / Birkenhead
-    'CT',       // Canterbury
-    'EH',       // Edinburgh
-    'G',        // Glasgow
-    'GL',       // Gloucester / Cheltenham
-    'L',        // Liverpool
-    'LS',       // Leeds
-    'LU',       // Luton
-    'M',        // Manchester
-    'MK',       // Milton Keynes
-    'ML',       // Motherwell (Glasgow metro)
-    'OL',       // Oldham (Greater Manchester)
-    'PA',       // Paisley (Glasgow metro)
-    'PO',       // Portsmouth
-    'S',        // Sheffield
-    'SK',       // Stockport (Greater Manchester)
-    'SO',       // Southampton
-    'WA',       // Warrington
-    'WF',       // Wakefield (Leeds metro)
-    'WN',       // Wigan (Greater Manchester)
-  ];
-
-  // Secondary cities (1.05×)
-  const TIER_105_AREAS = ['CF', 'DD', 'EX', 'NE', 'NG', 'NR', 'SN', 'YO', 'DT', 'ME', 'SP', 'SS', 'TQ', 'TR', 'WR', 'HG'];
-
-  // National average cities (1.0×)
-  const TIER_100_AREAS = ['CO', 'CV', 'DE', 'DY', 'FY', 'IP', 'LE', 'NP', 'PE', 'PL', 'PR', 'SA', 'SR', 'TF', 'WV', 'TA', 'HR', 'NN', 'LA', 'LD', 'LL', 'LN', 'WS', 'CA', 'HD'];
-
-  // Below-average areas (0.95×)
-  const TIER_095_AREAS = ['DL', 'DN', 'HU', 'ST', 'TS', 'BB', 'DH', 'HX'];
-
-  const parts = getPostcodeParts(rawPostcode);
-
-  if (parts) {
-    const { area, districtNum } = parts;
-
-    if (CENTRAL_LONDON_AREAS.includes(area) || CENTRAL_LONDON_DISTRICTS.includes(districtNum)) {
-      return { region: 'Central London', costMultiplier: 1.55, costReason: 'Central London rates (ULEZ, parking permits, premium labour)' };
+  let outward, inward;
+  if (raw.length >= 5) {
+    outward = raw.slice(0, -3);
+    inward  = raw.slice(-3);
+    if (!OUTWARD_REGEX.test(outward) || !INWARD_REGEX.test(inward)) {
+      return { valid: false, reason: 'malformed' };
     }
-    if (GREATER_LONDON_AREAS.includes(area)) {
-      return { region: 'Greater London', costMultiplier: 1.35, costReason: 'Greater London rates (materials, labour, access costs)' };
-    }
-    if (TIER_125_AREAS.includes(area)) {
-      return { region: area, costMultiplier: 1.25, costReason: 'London-adjacent premium city rates' };
-    }
-    if (TIER_115_AREAS.includes(area)) {
-      return { region: area, costMultiplier: 1.15, costReason: 'Major city rates' };
-    }
-    if (TIER_105_AREAS.includes(area)) {
-      return { region: area, costMultiplier: 1.05, costReason: 'Above-average regional rates' };
-    }
-    if (TIER_100_AREAS.includes(area)) {
-      return { region: area, costMultiplier: 1.0, costReason: 'Standard UK rates' };
-    }
-    if (TIER_095_AREAS.includes(area)) {
-      return { region: area, costMultiplier: 0.95, costReason: 'Below-average regional rates' };
-    }
+  } else {
+    outward = raw;
+    inward  = null;
+    if (!OUTWARD_REGEX.test(outward)) return { valid: false, reason: 'malformed' };
   }
 
-  // ── Fallback: postal_town string match ──────────────────────────────────────
-  // Catches any postcode areas not in the prefix map above
-  const city = addressComponents.find(c => c.types.includes('postal_town'))?.long_name;
-  const adminArea = addressComponents.find(c => c.types.includes('administrative_area_level_2'))?.long_name;
-
-  if (city?.toLowerCase().includes('london')) {
-    return { region: 'Greater London', costMultiplier: 1.35, costReason: 'Greater London rates (materials, labour, access costs)' };
-  }
-  if (['Oxford', 'Cambridge', 'Brighton', 'Bath', 'Reading', 'Slough', 'Watford'].some(c => city?.includes(c))) {
-    return { region: city, costMultiplier: 1.25, costReason: 'London-adjacent premium city rates' };
-  }
-  if (['Manchester', 'Birmingham', 'Leeds', 'Liverpool', 'Sheffield', 'Edinburgh', 'Glasgow', 'Bristol',
-       'Portsmouth', 'Southampton', 'Luton', 'Cheltenham', 'Gloucester', 'Bournemouth',
-       'Milton Keynes', 'Aberdeen', 'Canterbury'].some(c => city?.includes(c))) {
-    return { region: city, costMultiplier: 1.15, costReason: 'Major city rates' };
-  }
-  if (['Cardiff', 'Nottingham', 'Newcastle', 'Exeter', 'Swindon', 'Dundee', 'York', 'Norwich'].some(c => city?.includes(c))) {
-    return { region: city, costMultiplier: 1.05, costReason: 'Above-average regional rates' };
-  }
-  if (['Hull', 'Stoke', 'Middlesbrough'].some(c => city?.includes(c))) {
-    return { region: city, costMultiplier: 0.95, costReason: 'Below-average regional rates' };
-  }
-  if (city) {
-    return { region: city, costMultiplier: 1.0, costReason: 'Standard UK rates' };
-  }
-
-  return { region: adminArea || 'Unknown', costMultiplier: 1.0, costReason: 'Standard UK rates' };
+  return {
+    valid: true,
+    complete: Boolean(inward),
+    area: outward.match(/^([A-Z]+)/)[1],       // BS, SW
+    district: outward,                          // BS1, SW1A - outward code only
+    districtNum: outward.replace(/[A-Z]$/, ''), // SW1A -> SW1, for the Central London check
+    formatted: inward ? outward + ' ' + inward : outward
+  };
 }
 
+// ── Postcode area to region map ──────────────────────────────────────────────
+// Full UK coverage. Previously 16 areas (BT CW DG FK GY HS IM IV JE KA KW KY PH
+// SY TD ZE) had no mapping at all and fell through to region 'Unknown'.
+//
+// `slug` matches regionalCostData.json where a region page exists, null where the
+// area has no dedicated page but still needs a name and a multiplier. `name` is
+// the ONLY string ever written to locationData.region. Bare postcode letters
+// ('S', 'B', 'G') and Google postal_town strings ('Whitley Bay', 'Crieff') are no
+// longer written anywhere, so the field now has one controlled vocabulary.
+const AREA_REGIONS = {
+  'E':  { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'N':  { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'NW': { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'SE': { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'SW': { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'W':  { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'BR': { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'CR': { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'DA': { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'EN': { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'HA': { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'IG': { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'KT': { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'RM': { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'SM': { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'TN': { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'TW': { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'UB': { name: 'Greater London', slug: 'london-greater', m: 1.35 },
+  'SL': { name: 'Slough', slug: 'slough', m: 1.25 },
+  'RG': { name: 'Reading', slug: 'reading', m: 1.25 },
+  'OX': { name: 'Oxford', slug: 'oxford', m: 1.25 },
+  'CB': { name: 'Cambridge', slug: 'cambridge', m: 1.25 },
+  'WD': { name: 'Watford', slug: 'watford', m: 1.25 },
+  'BN': { name: 'Brighton & Hove', slug: 'brighton', m: 1.25 },
+  'BA': { name: 'Bath', slug: 'bath', m: 1.25 },
+  'AL': { name: 'St Albans', slug: null, m: 1.25 },
+  'GU': { name: 'Guildford & Surrey', slug: null, m: 1.25 },
+  'HP': { name: 'Hemel Hempstead & Chilterns', slug: null, m: 1.25 },
+  'CM': { name: 'Chelmsford & Mid Essex', slug: null, m: 1.25 },
+  'RH': { name: 'Redhill & East Surrey', slug: null, m: 1.25 },
+  'SG': { name: 'Stevenage & North Hertfordshire', slug: null, m: 1.25 },
+  'AB': { name: 'Aberdeen', slug: 'aberdeen', m: 1.15 },
+  'B':  { name: 'Birmingham', slug: 'birmingham', m: 1.15 },
+  'BD': { name: 'Bradford', slug: null, m: 1.15 },
+  'BH': { name: 'Bournemouth', slug: 'bournemouth', m: 1.15 },
+  'BL': { name: 'Bolton', slug: null, m: 1.15 },
+  'BS': { name: 'Bristol', slug: 'bristol', m: 1.15 },
+  'CH': { name: 'Chester & Birkenhead', slug: 'birkenhead', m: 1.15 },
+  'CT': { name: 'Canterbury', slug: 'canterbury', m: 1.15 },
+  'EH': { name: 'Edinburgh', slug: 'edinburgh', m: 1.15 },
+  'G':  { name: 'Glasgow', slug: 'glasgow', m: 1.15 },
+  'GL': { name: 'Gloucester & Cheltenham', slug: 'gloucester', m: 1.15 },
+  'L':  { name: 'Liverpool', slug: 'liverpool', m: 1.15 },
+  'LS': { name: 'Leeds', slug: 'leeds', m: 1.15 },
+  'LU': { name: 'Luton', slug: 'luton', m: 1.15 },
+  'M':  { name: 'Manchester', slug: 'manchester', m: 1.15 },
+  'MK': { name: 'Milton Keynes', slug: 'milton-keynes', m: 1.15 },
+  'ML': { name: 'Motherwell', slug: null, m: 1.15 },
+  'OL': { name: 'Oldham', slug: null, m: 1.15 },
+  'PA': { name: 'Paisley', slug: null, m: 1.15 },
+  'PO': { name: 'Portsmouth', slug: 'portsmouth', m: 1.15 },
+  'S':  { name: 'Sheffield', slug: 'sheffield', m: 1.15 },
+  'SK': { name: 'Stockport', slug: null, m: 1.15 },
+  'SO': { name: 'Southampton', slug: 'southampton', m: 1.15 },
+  'WA': { name: 'Warrington', slug: null, m: 1.15 },
+  'WF': { name: 'Wakefield', slug: null, m: 1.15 },
+  'WN': { name: 'Wigan', slug: null, m: 1.15 },
+  'CF': { name: 'Cardiff', slug: 'cardiff', m: 1.05 },
+  'DD': { name: 'Dundee', slug: 'dundee', m: 1.05 },
+  'EX': { name: 'Exeter', slug: 'exeter', m: 1.05 },
+  'NE': { name: 'Newcastle', slug: 'newcastle', m: 1.05 },
+  'NG': { name: 'Nottingham', slug: 'nottingham', m: 1.05 },
+  'NR': { name: 'Norwich', slug: 'norwich', m: 1.05 },
+  'SN': { name: 'Swindon', slug: 'swindon', m: 1.05 },
+  'YO': { name: 'York', slug: 'york', m: 1.05 },
+  'DT': { name: 'Dorchester & Dorset', slug: null, m: 1.05 },
+  'ME': { name: 'Medway', slug: null, m: 1.05 },
+  'SP': { name: 'Salisbury', slug: null, m: 1.05 },
+  'SS': { name: 'Southend-on-Sea', slug: null, m: 1.05 },
+  'TQ': { name: 'Torquay & Torbay', slug: null, m: 1.05 },
+  'TR': { name: 'Truro & Cornwall', slug: null, m: 1.05 },
+  'WR': { name: 'Worcester', slug: null, m: 1.05 },
+  'HG': { name: 'Harrogate', slug: null, m: 1.05 },
+  'KW': { name: 'Caithness & Orkney', slug: null, m: 1.05 },
+  'HS': { name: 'Outer Hebrides', slug: null, m: 1.05 },
+  'ZE': { name: 'Shetland', slug: null, m: 1.05 },
+  'CO': { name: 'Colchester', slug: 'colchester', m: 1.0 },
+  'CV': { name: 'Coventry', slug: 'coventry', m: 1.0 },
+  'DE': { name: 'Derby', slug: 'derby', m: 1.0 },
+  'DY': { name: 'Dudley', slug: null, m: 1.0 },
+  'FY': { name: 'Blackpool', slug: 'blackpool', m: 1.0 },
+  'IP': { name: 'Ipswich', slug: 'ipswich', m: 1.0 },
+  'LE': { name: 'Leicester', slug: 'leicester', m: 1.0 },
+  'NP': { name: 'Newport', slug: 'newport', m: 1.0 },
+  'PE': { name: 'Peterborough', slug: 'peterborough', m: 1.0 },
+  'PL': { name: 'Plymouth', slug: 'plymouth', m: 1.0 },
+  'PR': { name: 'Preston', slug: 'preston', m: 1.0 },
+  'SA': { name: 'Swansea', slug: 'swansea', m: 1.0 },
+  'SR': { name: 'Sunderland', slug: 'sunderland', m: 1.0 },
+  'TF': { name: 'Telford', slug: 'telford', m: 1.0 },
+  'WV': { name: 'Wolverhampton', slug: 'wolverhampton', m: 1.0 },
+  'TA': { name: 'Taunton & Somerset', slug: null, m: 1.0 },
+  'HR': { name: 'Hereford', slug: null, m: 1.0 },
+  'NN': { name: 'Northampton', slug: null, m: 1.0 },
+  'LA': { name: 'Lancaster', slug: null, m: 1.0 },
+  'LD': { name: 'Llandrindod Wells & Powys', slug: null, m: 1.0 },
+  'LL': { name: 'North Wales', slug: null, m: 1.0 },
+  'LN': { name: 'Lincoln', slug: null, m: 1.0 },
+  'WS': { name: 'Walsall', slug: null, m: 1.0 },
+  'CA': { name: 'Carlisle & Cumbria', slug: null, m: 1.0 },
+  'HD': { name: 'Huddersfield', slug: null, m: 1.0 },
+  'BT': { name: 'Belfast & Northern Ireland', slug: 'belfast', m: 1.0 },
+  'CW': { name: 'Crewe', slug: null, m: 1.0 },
+  'SY': { name: 'Shrewsbury', slug: null, m: 1.0 },
+  'FK': { name: 'Falkirk', slug: null, m: 1.0 },
+  'KY': { name: 'Kirkcaldy & Fife', slug: null, m: 1.0 },
+  'KA': { name: 'Kilmarnock & Ayrshire', slug: null, m: 1.0 },
+  'PH': { name: 'Perth & Highland Perthshire', slug: null, m: 1.0 },
+  'IV': { name: 'Inverness & Highlands', slug: null, m: 1.0 },
+  'DL': { name: 'Darlington', slug: null, m: 0.95 },
+  'DN': { name: 'Doncaster', slug: null, m: 0.95 },
+  'HU': { name: 'Hull', slug: 'hull', m: 0.95 },
+  'ST': { name: 'Stoke-on-Trent', slug: 'stoke-on-trent', m: 0.95 },
+  'TS': { name: 'Middlesbrough', slug: 'middlesbrough', m: 0.95 },
+  'BB': { name: 'Blackburn', slug: null, m: 0.95 },
+  'DH': { name: 'Durham', slug: null, m: 0.95 },
+  'HX': { name: 'Halifax', slug: null, m: 0.95 },
+  'TD': { name: 'Galashiels & Scottish Borders', slug: null, m: 0.95 },
+  'DG': { name: 'Dumfries & Galloway', slug: null, m: 0.95 },
+};
+
+const REGION_REASONS = {
+  1.55: 'Central London rates (ULEZ, parking permits, premium labour)',
+  1.35: 'Greater London rates (materials, labour, access costs)',
+  1.25: 'London-adjacent premium city rates',
+  1.15: 'Major city rates',
+  1.05: 'Above-average regional rates',
+  1:    'Standard UK rates',
+  0.95: 'Below-average regional rates'
+};
+
+// Central London is district-specific, so it is checked before the area map.
+const CENTRAL_LONDON_AREAS     = ['EC', 'WC'];
+const CENTRAL_LONDON_DISTRICTS = ['W1', 'SW1', 'SW3', 'SW5', 'SW7', 'SW10', 'SE1', 'N1', 'NW1', 'NW8'];
+
+// Outside the UK mainland trades market. Places returns nothing usable and the
+// cost model does not apply, so these are rejected rather than priced at 1.0.
+const OUT_OF_SCOPE_AREAS = ['GY', 'JE', 'IM'];
+
+// Location-based cost analysis
+// Postcode area is now the only input. addressComponents is retained in the
+// signature for the existing call site but is no longer read: the Google
+// postal_town fallback was the source of the third region vocabulary, and with
+// full area coverage above there is nothing left for it to catch.
+//
+// Unresolvable input still returns a usable 1.0 multiplier so the estimate saves
+// and volume is preserved, but region is null and regionResolved is false, so the
+// record can be cleanly excluded from regional demand reporting and the cost index.
+function analyzeLocationCost(addressComponents, rawPostcode) {
+  const unresolved = (resolutionReason) => ({
+    region: null,
+    regionSlug: null,
+    costMultiplier: 1.0,
+    costReason: 'UK average rates',
+    regionResolved: false,
+    resolutionReason
+  });
+
+  const parsed = parsePostcode(rawPostcode);
+  if (!parsed.valid) return unresolved('invalid_input');
+  if (OUT_OF_SCOPE_AREAS.includes(parsed.area)) return unresolved('out_of_scope');
+
+  if (CENTRAL_LONDON_AREAS.includes(parsed.area) || CENTRAL_LONDON_DISTRICTS.includes(parsed.districtNum)) {
+    return {
+      region: 'Central London',
+      regionSlug: 'london-central',
+      costMultiplier: 1.55,
+      costReason: REGION_REASONS[1.55],
+      regionResolved: true,
+      resolutionReason: 'matched'
+    };
+  }
+
+  const match = AREA_REGIONS[parsed.area];
+  if (match) {
+    return {
+      region: match.name,
+      regionSlug: match.slug,
+      costMultiplier: match.m,
+      costReason: REGION_REASONS[match.m],
+      regionResolved: true,
+      resolutionReason: 'matched'
+    };
+  }
+
+  // Valid postcode, unmapped area. Should not happen now the map is complete, but
+  // Royal Mail does add areas. Logged so it surfaces rather than failing silently.
+  console.warn('WARN unmapped postcode area:', parsed.area, '| district:', parsed.district);
+  return unresolved('uncovered_area');
+}
 // ── Location cost lookup — postcode only, no Places call ──
 // Used by the frontend to resolve a multiplier and show an estimate immediately,
 // before the contractor search completes. Falls back to 1.0 for unknown postcodes.
@@ -560,11 +679,23 @@ app.post('/api/location-cost', async (req, res) => {
     if (!postcode || typeof postcode !== 'string') {
       return res.status(400).json({ error: 'postcode is required' });
     }
-    const clean = postcode.trim().toUpperCase();
+    const parsed = parsePostcode(postcode);
+    if (!parsed.valid) {
+      // Forward instrumentation. locationHash is one-way, so the Render log is the
+      // only place we can see what people are actually typing into the box.
+      console.warn('WARN location-cost rejected:', JSON.stringify(postcode.trim()), '| reason:', parsed.reason);
+      return res.status(400).json({
+        error: 'invalid_postcode',
+        message: "We couldn't find that postcode. Please check it and try again."
+      });
+    }
+
     // Prefix lookup does not need addressComponents — pass empty array.
-    // Unknown postcodes fall through to the standard 1.0 multiplier.
-    const locationData = analyzeLocationCost([], clean);
-    return res.json({ locationData });
+    const locationData = analyzeLocationCost([], parsed.formatted);
+    if (!locationData.regionResolved) {
+      console.warn('WARN location-cost unresolved region:', parsed.district, '| reason:', locationData.resolutionReason);
+    }
+    return res.json({ locationData, district: parsed.district });
   } catch (error) {
     console.error('location-cost error:', error);
     return res.status(500).json({ error: 'Failed to resolve location cost' });
@@ -902,7 +1033,10 @@ res.json({
   locationData: locationDetails ? {
     costMultiplier: locationDetails.costMultiplier,
     costReason: locationDetails.costReason,
-    region: locationDetails.region
+    region: locationDetails.region,
+    regionSlug: locationDetails.regionSlug,
+    regionResolved: locationDetails.regionResolved,
+    resolutionReason: locationDetails.resolutionReason
   } : null
 });
 
@@ -1013,10 +1147,55 @@ app.post('/api/save-estimate', async (req, res) => {
 
     // Hash the postcode (ANONYMIZATION)
     const locationHash = hashPostcode(userLocation);
-    
+
+    // Outward code only, e.g. "SW1A". An outward code covers thousands of addresses,
+    // so it is not personal data, and it is the field regional demand reporting needs:
+    // locationHash is one-way and cannot be grouped by area. Derived server-side from
+    // the raw postcode rather than trusted from the client.
+    const parsedLocation = parsePostcode(userLocation);
+    const district = parsedLocation.valid ? parsedLocation.district : null;
+
     console.log('🔒 Anonymizing postcode:');
     console.log('  Original:', userLocation);
     console.log('  Hashed:', locationHash);
+    console.log('  District:', district);
+
+    // ── Dedup guard ──
+    // App.js resets its save guard whenever the postcode changes, so a single user
+    // refining a postcode or changing quality could produce several documents for one
+    // estimate. That inflates estimate volume (the primary metric) and pollutes the
+    // cost index. Same hashed postcode + same job within 60 seconds is a double-fire,
+    // not a second estimate: update the existing record and return its id.
+    const recentDuplicate = await Estimate.findOne({
+      locationHash,
+      jobType,
+      category,
+      createdAt: { $gte: new Date(Date.now() - 60 * 1000) }
+    }).sort({ createdAt: -1 });
+
+    if (recentDuplicate) {
+      recentDuplicate.estimate = estimate;
+      recentDuplicate.multipliers = multipliers;
+      recentDuplicate.quality = quality;
+      recentDuplicate.locationData = {
+        region:           locationData?.region ?? null,
+        regionSlug:       locationData?.regionSlug ?? null,
+        district,
+        costMultiplier:   locationData?.costMultiplier ?? 1.0,
+        costReason:       locationData?.costReason ?? 'UK average rates',
+        regionResolved:   locationData?.regionResolved ?? false,
+        resolutionReason: locationData?.resolutionReason ?? 'invalid_input'
+      };
+      await recentDuplicate.save();
+      console.log('♻️ Duplicate estimate collapsed into', recentDuplicate._id.toString());
+      return res.json({
+        success: true,
+        estimateId: recentDuplicate._id,
+        message: 'Estimate updated',
+        anonymous: true,
+        deduped: true
+      });
+    }
 
     // Create new estimate document with ANONYMOUS data
     const newEstimate = new Estimate({
@@ -1033,10 +1212,15 @@ app.post('/api/save-estimate', async (req, res) => {
       // Location (ANONYMIZED)
       locationHash: locationHash,  // Hashed, not actual postcode
       locationData: {
-        region: locationData?.region,        // Just "London", "Manchester"
-        costMultiplier: locationData?.costMultiplier,
-        costReason: locationData?.costReason
-        // Don't store: city, district, postcode
+        // region is now a controlled name from AREA_REGIONS, or null when unresolved.
+        region:           locationData?.region ?? null,
+        regionSlug:       locationData?.regionSlug ?? null,
+        district,                                   // outward code only, not PII
+        costMultiplier:   locationData?.costMultiplier ?? 1.0,
+        costReason:       locationData?.costReason ?? 'UK average rates',
+        regionResolved:   locationData?.regionResolved ?? false,
+        resolutionReason: locationData?.resolutionReason ?? 'invalid_input'
+        // Still not stored: city, full postcode
       },
       
       // Quality
@@ -1123,7 +1307,7 @@ app.post('/api/save-estimate', async (req, res) => {
 app.patch('/api/save-estimate/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { estimate, photoAnalysis, multipliers, quality } = req.body;
+    const { estimate, photoAnalysis, multipliers, quality, userLocation, locationData } = req.body;
 
     if (!id || !estimate) {
       return res.status(400).json({
@@ -1132,12 +1316,32 @@ app.patch('/api/save-estimate/:id', async (req, res) => {
       });
     }
 
+    // A corrected or completed postcode arriving after the first save must update the
+    // region, not leave the original (possibly unresolved) one in place.
+    let locationPatch = {};
+    if (userLocation && locationData) {
+      const parsedPatchLocation = parsePostcode(userLocation);
+      locationPatch = {
+        locationHash: hashPostcode(userLocation),
+        locationData: {
+          region:           locationData?.region ?? null,
+          regionSlug:       locationData?.regionSlug ?? null,
+          district:         parsedPatchLocation.valid ? parsedPatchLocation.district : null,
+          costMultiplier:   locationData?.costMultiplier ?? 1.0,
+          costReason:       locationData?.costReason ?? 'UK average rates',
+          regionResolved:   locationData?.regionResolved ?? false,
+          resolutionReason: locationData?.resolutionReason ?? 'invalid_input'
+        }
+      };
+    }
+
     const updated = await Estimate.findByIdAndUpdate(
       id,
       {
         $set: {
           estimate,
           multipliers,
+          ...locationPatch,
           ...(quality ? { quality } : {}),
           photoAnalysis: photoAnalysis ? {
             adjustment: photoAnalysis.adjustment,
