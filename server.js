@@ -184,8 +184,10 @@ const apiLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
-  // Skip rate limiting for health check and contractor-click (has its own limiter)
+  // Skip rate limiting for health check, contractor-click, and leads/save-estimate
+  // (each has its own more generous limiter below)
   skip: (req) => req.path === '/' || req.method === 'OPTIONS' || req.path === '/api/contractor-click'
+    || req.path.startsWith('/api/leads') || req.path.startsWith('/api/save-estimate')
   // Using default keyGenerator which handles IPv6 correctly
 });
 
@@ -194,6 +196,19 @@ const contractorClickLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
   message: { error: 'Too many requests', message: 'Please wait before trying again.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Leads + save-estimate limiter -- a single estimate flow can legitimately fire several
+// of these (initial save, a PATCH per quality/size/photo change, plus an email or
+// contact-request lead), so they share a more generous bucket separate from the tight
+// 5/min general apiLimiter, which a normal test session was exhausting before reaching
+// the lead-capture step.
+const leadsAndEstimateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  message: { error: 'Too many requests', message: 'Please wait a moment before trying again.' },
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -213,6 +228,8 @@ const photoAnalysisLimiter = rateLimit({
 // Apply rate limiter to all API routes
 app.use('/api/', apiLimiter);
 app.use('/api/contractor-click', contractorClickLimiter);
+app.use('/api/leads', leadsAndEstimateLimiter);
+app.use('/api/save-estimate', leadsAndEstimateLimiter);
 
 // Health check endpoint
 app.get('/', (req, res) => {
