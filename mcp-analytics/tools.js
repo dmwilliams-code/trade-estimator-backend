@@ -1,9 +1,6 @@
 // Tool definitions. All read-only -- no tool here performs a write of any
 // kind. Descriptions matter: they're what Claude reads to choose a tool, so
 // the distinctions between tools are made explicit in each one.
-//
-// Phase 6: tools 1, 2 and 7 only (get_site_snapshot, get_ab_test_status,
-// get_change_log). Tools 3-6 land in the next phase.
 
 const { z } = require('zod/v4');
 const analyticsSnapshot = require('../analytics/analyticsSnapshot');
@@ -12,8 +9,12 @@ function toToolResult(payload) {
   return { content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }] };
 }
 
-// Structured error, never a stack trace or internal file path.
-function toErrorResult(err) {
+// Structured error, never a stack trace or internal file path in what's
+// returned to the client. The full message is also logged server-side so a
+// real outage (e.g. GA4/GSC auth expiring) shows up in Render's logs
+// directly, not only inside a tool response someone happens to inspect.
+function toErrorResult(toolName, err) {
+  console.error(`[${new Date().toISOString()}] tool error (${toolName}):`, err.message);
   return {
     content: [{ type: 'text', text: `Error: ${err.message}` }],
     isError: true,
@@ -41,7 +42,7 @@ function registerTools(server) {
       try {
         return toToolResult(await analyticsSnapshot.buildSnapshot({ period }));
       } catch (err) {
-        return toErrorResult(err);
+        return toErrorResult('get_site_snapshot', err);
       }
     }
   );
@@ -60,7 +61,107 @@ function registerTools(server) {
       try {
         return toToolResult(await analyticsSnapshot.getAbTestStatus());
       } catch (err) {
-        return toErrorResult(err);
+        return toErrorResult('get_ab_test_status', err);
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_gsc_performance',
+    {
+      description:
+        'Google Search Console clicks, impressions, CTR and average position, broken down by query, page, ' +
+        'country or device, plus the delta vs the immediately preceding equivalent window. GSC data lags ' +
+        '2-3 days behind GA4 and MongoDB -- do not compare absolute counts across sources without accounting ' +
+        'for that (see meta.caveats).',
+      inputSchema: {
+        days: z.number().int().min(1).max(90).default(28).describe('Number of days to look back, 1-90.'),
+        dimension: z.enum(['query', 'page', 'country', 'device']).describe('What to break the results down by.'),
+        limit: z.number().int().min(1).max(500).default(20).describe('Max rows to return.'),
+      },
+    },
+    async ({ days, dimension, limit }) => {
+      try {
+        return toToolResult(await analyticsSnapshot.getGscPerformance({ days, dimension, limit }));
+      } catch (err) {
+        return toErrorResult('get_gsc_performance', err);
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_ga4_events',
+    {
+      description:
+        'GA4 event counts and unique users, optionally filtered to specific event names and broken down by ' +
+        'traffic source, medium, or not broken down at all. Singapore traffic is excluded, matching the ' +
+        'existing weekly GA4 analyser. breakdown "variant" is NOT supported -- ab_variant is sent as a GA4 ' +
+        'event parameter but is not a registered GA4 custom dimension, so it cannot be queried via the Data ' +
+        'API. Use get_estimate_demand or get_contractor_signals for variant-segmented data instead.',
+      inputSchema: {
+        days: z.number().int().min(1).max(90).default(7).describe('Number of days to look back, 1-90.'),
+        eventNames: z
+          .array(z.string())
+          .optional()
+          .describe('Specific GA4 event names to filter to, e.g. ["estimate_generated"]. Omit for all events.'),
+        breakdown: z
+          .enum(['source', 'medium', 'variant', 'none'])
+          .default('none')
+          .describe('How to break down event counts. "variant" will return a clear unsupported-dimension error -- see description.'),
+      },
+    },
+    async ({ days, eventNames, breakdown }) => {
+      try {
+        return toToolResult(await analyticsSnapshot.getGa4Events({ days, eventNames, breakdown }));
+      } catch (err) {
+        return toErrorResult('get_ga4_events', err);
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_estimate_demand',
+    {
+      description:
+        'Estimate volume and average value by job type, district or region, split by A/B variant and by ' +
+        'quality tier, with unresolved-region counts surfaced separately rather than dropped. "region" groups ' +
+        'by the stable regionSlug key, not the display region name.',
+      inputSchema: {
+        days: z.number().int().min(1).max(90).default(7).describe('Number of days to look back, 1-90.'),
+        groupBy: z.enum(['job_type', 'district', 'region']).describe('What to group demand by.'),
+      },
+    },
+    async ({ days, groupBy }) => {
+      try {
+        return toToolResult(await analyticsSnapshot.getEstimateDemand({ days, groupBy }));
+      } catch (err) {
+        return toErrorResult('get_estimate_demand', err);
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_contractor_signals',
+    {
+      description:
+        'Contractor engagement from ContractorClick events, split by A/B variant. groupBy "ladder" returns ' +
+        'counts per action (shown, call, website, map, contact_requested) per variant -- note control-arm ' +
+        '"shown" counts are known to be under-reported (see meta.caveats), other actions are unaffected. ' +
+        'groupBy "contractor" returns per-contractor density (name, place ID, districts, job types, total ' +
+        'estimate value) ranked by signal count, where a signal is call, website, map or contact_requested ' +
+        '-- "shown" is excluded there as a passive impression, not an active signal. Use "contractor" for ' +
+        'outreach targeting, "ladder" for funnel-shape questions.',
+      inputSchema: {
+        days: z.number().int().min(1).max(90).default(7).describe('Number of days to look back, 1-90.'),
+        groupBy: z.enum(['ladder', 'contractor']).describe('"ladder" for the action-count funnel, "contractor" for per-contractor density.'),
+        limit: z.number().int().min(1).max(100).default(20).describe('Max contractors to return. Only applies when groupBy is "contractor".'),
+      },
+    },
+    async ({ days, groupBy, limit }) => {
+      try {
+        return toToolResult(await analyticsSnapshot.getContractorSignals({ days, groupBy, limit }));
+      } catch (err) {
+        return toErrorResult('get_contractor_signals', err);
       }
     }
   );
@@ -83,7 +184,7 @@ function registerTools(server) {
       try {
         return toToolResult(await analyticsSnapshot.getChangeLog({ since }));
       } catch (err) {
-        return toErrorResult(err);
+        return toErrorResult('get_change_log', err);
       }
     }
   );

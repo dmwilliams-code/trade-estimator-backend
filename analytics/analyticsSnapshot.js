@@ -267,6 +267,7 @@ async function buildSnapshot({ period }) {
   try {
     gsc = await coreGscPerformance(period, 'page', 20);
   } catch (err) {
+    console.error(`[${new Date().toISOString()}] buildSnapshot: gsc source failed:`, err.message);
     partialFailure.push({ source: 'gsc', reason: err.message });
   }
 
@@ -274,6 +275,7 @@ async function buildSnapshot({ period }) {
   try {
     ga4 = await coreGa4Events(period, null, 'none');
   } catch (err) {
+    console.error(`[${new Date().toISOString()}] buildSnapshot: ga4 source failed:`, err.message);
     partialFailure.push({ source: 'ga4', reason: err.message });
   }
 
