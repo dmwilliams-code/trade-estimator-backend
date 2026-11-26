@@ -5,7 +5,11 @@ const cors = require('cors');
 const OpenAI = require('openai');
 const { Client } = require('@googlemaps/google-maps-services-js');
 const mongoose = require('mongoose');
-const rateLimit = require('express-rate-limit');
+const { createRateLimiters, applyRateLimits } = require('./middleware/rateLimits');
+const { coalesce, searchKey } = require('./middleware/coalesce');
+const { classifyPhotoError } = require('./utils/photoErrors');
+const { createOpsAlerter } = require('./utils/opsAlert');
+const { sendOpsEmail } = require('./services/emailService');
 const validator = require('validator');
 const mongoSanitize = require('express-mongo-sanitize');
 const helmet = require('helmet');
@@ -140,6 +144,8 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-reindex-secret'],
   credentials: true,
+  // Lets the browser read how long to wait after a 429
+  exposedHeaders: ['Retry-After', 'RateLimit-Reset'],
   optionsSuccessStatus: 200,
   preflightContinue: false
 };
@@ -158,64 +164,12 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 
-// Rate limiter: Prevents abuse by limiting requests per IP
-// GDPR compliant: Legitimate interest (Article 6(1)(f))
-// Stores IP + count for 60 seconds only
-const apiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute window
-  max: 5, // Maximum 5 requests per minute per IP
-  message: {
-    error: 'Too many requests',
-    message: 'Please wait a moment before trying again. Maximum 5 requests per minute.'
-  },
-  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
-  legacyHeaders: false, // Disable `X-RateLimit-*` headers
-  // Skip rate limiting for health check, contractor-click, and leads/save-estimate
-  // (each has its own more generous limiter below)
-  skip: (req) => req.path === '/' || req.method === 'OPTIONS' || req.path === '/api/contractor-click'
-    || req.path.startsWith('/api/leads') || req.path.startsWith('/api/save-estimate')
-  // Using default keyGenerator which handles IPv6 correctly
-});
+// Rate limits are defined in middleware/rateLimits.js
+const limiters = createRateLimiters();
+applyRateLimits(app, limiters);
 
-// Contractor click limiter -- generous, lightweight write, no abuse potential
-const contractorClickLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 30,
-  message: { error: 'Too many requests', message: 'Please wait before trying again.' },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-// Leads + save-estimate limiter -- a single estimate flow can legitimately fire several
-// of these (initial save, a PATCH per quality/size/photo change, plus an email or
-// contact-request lead), so they share a more generous bucket separate from the tight
-// 5/min general apiLimiter, which a normal test session was exhausting before reaching
-// the lead-capture step.
-const leadsAndEstimateLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 20,
-  message: { error: 'Too many requests', message: 'Please wait a moment before trying again.' },
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-const photoAnalysisLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 3, // Only 3 photo analysis requests per minute
-  message: {
-    error: 'Too many photo analysis requests',
-    message: 'Please wait before analyzing more photos. Maximum 3 analyses per minute.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
-  // Using default keyGenerator which handles IPv6 correctly
-});
-
-// Apply rate limiter to all API routes
-app.use('/api/', apiLimiter);
-app.use('/api/contractor-click', contractorClickLimiter);
-app.use('/api/leads', leadsAndEstimateLimiter);
-app.use('/api/save-estimate', leadsAndEstimateLimiter);
+// Emails ALERT_EMAIL when photo analysis stops working for a billing or key reason
+const alertOps = createOpsAlerter({ send: sendOpsEmail, recipient: () => process.env.ALERT_EMAIL });
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -227,7 +181,7 @@ app.get('/', (req, res) => {
 // No batching, no mini model, no complexity - just clean and fast
 // ====================================================================
 
-app.post('/api/analyze-photos', photoAnalysisLimiter, async (req, res) => {
+app.post('/api/analyze-photos', limiters.photoAnalysis, async (req, res) => {
   try {
     const { images, jobType } = req.body;
 
@@ -368,11 +322,26 @@ Return ONLY valid JSON, no other text.`;
     res.json(result);
 
   } catch (error) {
-    console.error('Photo analysis error:', error);
-    
-    res.status(500).json({
-      error: 'Photo analysis failed',
-      message: 'Unable to analyze photos. Please try again.',
+    const failure = classifyPhotoError(error);
+    console.error(`PHOTO_ANALYSIS_FAIL reason=${failure.reason} status=${(error && error.status) || 'n/a'}`);
+    console.error('Photo analysis error:', failure.reason === 'other' ? error : error.message);
+    if (failure.alert) {
+      // Not awaited: the visitor should not wait for the email
+      alertOps(
+        `photo-${failure.reason}`,
+        `EstimateAI: photo analysis is failing (${failure.reason})`,
+        `AI photo analysis is failing with reason "${failure.reason}".
+
+OpenAI said: ${error.message}
+
+Estimates still work. Check OpenAI billing and the API key. This alert repeats at most once every 6 hours.`
+      );
+    }
+
+    res.status(failure.httpStatus).json({
+      error: failure.errorCode,
+      reason: failure.reason,
+      message: failure.message,
       fallback: true,
       adjustment: 1.0,
       confidence: 0,
@@ -739,7 +708,7 @@ app.post('/api/contractor-click', async (req, res) => {
 });
 
 // Search contractors endpoint
-app.post('/api/search-contractors', async (req, res) => {
+app.post('/api/search-contractors', coalesce(searchKey), async (req, res) => {
   try {
     const { jobType, userLocation, quality = 'standard', category = '', projectScale = 1 } = req.body;
 
@@ -761,43 +730,10 @@ app.post('/api/search-contractors', async (req, res) => {
       });
     }
 
-    const geocodingResponse = await googlePlacesClient.geocode({
-      params: {
-        address: userLocation + ', UK',
-        key: process.env.GOOGLE_PLACES_API_KEY
-      }
-    }).catch(err => {
-      console.warn('⚠️ Geocoding failed, using fallback:', err.message);
-      return {
-        data: {
-          results: [{
-            geometry: { location: postcodeValidation.location },
-            formatted_address: postcodeValidation.formattedAddress,
-            address_components: [
-              { long_name: 'United Kingdom', short_name: 'GB', types: ['country', 'political'] },
-              { long_name: 'England', short_name: 'England', types: ['administrative_area_level_1', 'political'] }
-            ]
-          }]
-        }
-      };
-    });
-
-    if (geocodingResponse.data.results.length === 0) {
-      console.warn('⚠️ No geocoding results, using validation data');
-      geocodingResponse.data.results = [{
-        geometry: { location: postcodeValidation.location },
-        formatted_address: postcodeValidation.formattedAddress,
-        address_components: [
-          { long_name: 'United Kingdom', short_name: 'GB', types: ['country', 'political'] },
-          { long_name: 'England', short_name: 'England', types: ['administrative_area_level_1', 'political'] }
-        ]
-      }];
-    }
-
-    const location = geocodingResponse.data.results[0].geometry.location;
-    const addressComponents = geocodingResponse.data.results[0].address_components;
-    
-    const locationDetails = analyzeLocationCost(addressComponents, userLocation);
+    // validateAndGeocodePostcode has already geocoded this postcode, so reuse its
+    // coordinates. analyzeLocationCost resolves from the postcode alone.
+    const location = postcodeValidation.location;
+    const locationDetails = analyzeLocationCost([], userLocation);
 
     // ── Job-type to Places type + keyword mapping ──
     // Maps each job name to the most specific Google Places type available

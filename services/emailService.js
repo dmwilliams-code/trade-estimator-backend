@@ -279,6 +279,19 @@ transporter.verify(function(error, success) {
   }
 });
 
+/**
+ * Plain text operational alert, used by utils/opsAlert.js
+ */
+async function sendOpsEmail({ to, subject, text }) {
+  return transporter.sendMail({
+    from: `"EstimateAI alerts" <${process.env.SMTP_USER}>`,
+    to,
+    subject,
+    text
+  });
+}
+
 module.exports = {
-  sendWelcomeEmail
+  sendWelcomeEmail,
+  sendOpsEmail
 };

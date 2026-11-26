@@ -4,6 +4,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "test": "node --test test/reliability.test.js",
     "generate-sitemap": "node scripts/generateSitemap.js"
   },
   "dependencies": {
