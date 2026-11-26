@@ -37,7 +37,7 @@ async function sendWelcomeEmail(leadData, estimateData = null) {
   try {
     const { email, jobName, category, quality, hasPhotos } = leadData;
     
-    console.log('📤 Preparing welcome email for:', email);
+    console.log('📤 Preparing welcome email');
     
     // Build email content
     const htmlContent = buildWelcomeEmailHTML(leadData, estimateData);
@@ -56,7 +56,6 @@ async function sendWelcomeEmail(leadData, estimateData = null) {
     
     console.log('✅ Email sent successfully!');
     console.log('   Message ID:', info.messageId);
-    console.log('   Recipient:', email);
     
     return info;
     

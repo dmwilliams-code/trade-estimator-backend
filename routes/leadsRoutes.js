@@ -104,7 +104,6 @@ router.post('/', async (req, res) => {
 
     console.log('✅ Lead captured:', {
       leadId: savedLead._id,
-      email: savedLead.email,
       source: savedLead.source,
       jobName: savedLead.jobName,
       hasPhotos: savedLead.hasPhotos
@@ -114,12 +113,11 @@ router.post('/', async (req, res) => {
     // Blocklist approach: add to noEmailSources to suppress, rather than maintaining a whitelist
     const noEmailSources = ['admin', 'test', 'dev'];
     if (!noEmailSources.includes(source)) {
-      console.log('📤 Attempting to send welcome email to:', email);
+      console.log('📤 Attempting to send welcome email for lead:', savedLead._id);
       sendWelcomeEmail({ ...savedLead.toObject(), contractors: contractors || [] }, estimateData)
         .then((result) => {
           console.log('📧 Welcome email sent successfully!');
           console.log('   Email ID:', result.id);
-          console.log('   Recipient:', email);
         })
         .catch(err => {
           console.error('❌ Email sending failed!');
@@ -320,7 +318,7 @@ router.patch('/:id', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Lead not found' });
     }
 
-    console.log('✅ Lead updated:', { leadId: lead._id, status: lead.status, email: lead.email });
+    console.log('✅ Lead updated:', { leadId: lead._id, status: lead.status });
     res.json({ success: true, message: 'Lead updated successfully', lead });
 
   } catch (error) {
@@ -340,7 +338,7 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Lead not found' });
     }
 
-    console.log('🗑️ Lead deleted:', { leadId: lead._id, email: lead.email });
+    console.log('🗑️ Lead deleted:', { leadId: lead._id });
     res.json({ success: true, message: 'Lead deleted successfully' });
 
   } catch (error) {
