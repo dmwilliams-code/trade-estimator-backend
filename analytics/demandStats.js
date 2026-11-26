@@ -11,6 +11,7 @@ const {
   RULES,
   JOB_LABELS,
   FAMILIES,
+  CHART_GROUPS,
   AREA_SIZES,
   PROJECT_SIZE_JOBS,
   PROJECT_SIZE_LABELS,
@@ -201,6 +202,24 @@ function quoteMetric(rows, rules) {
   return shareTable(countBy(answered, (r) => r.quoteStatus), (k) => QUOTE_LABELS[k], { minCell: rules.minCell });
 }
 
+// Five fixed groups in fixed order. Shares are of all estimates in the period;
+// a group under minCell keeps its row with share null ("too few to show"), so
+// every period has the same rows and the shown shares can sum to under 100.
+function groupMetric(rows, rules) {
+  const groupOf = (jobType) => {
+    const g = CHART_GROUPS.find((x) => x.jobTypes.includes(jobType));
+    return g ? g.key : 'everything-else';
+  };
+  const counts = CHART_GROUPS.map((g) => rows.filter((r) => groupOf(r.jobType) === g.key).length);
+  const shares = wholeShares(counts, rows.length);
+  return CHART_GROUPS.map((g, i) => ({
+    key: g.key,
+    label: g.label,
+    count: counts[i],
+    share: counts[i] >= rules.minCell ? shares[i] : null
+  }));
+}
+
 function scopeMetrics(rows, { scope, key, windowType, regionNames, rules }) {
   const metrics = {
     qualityMix: shareTable(countBy(rows, (r) => (QUALITY_LABELS[r.quality] ? r.quality : null)), (k) => QUALITY_LABELS[k], { minCell: rules.minCell }),
@@ -210,6 +229,7 @@ function scopeMetrics(rows, { scope, key, windowType, regionNames, rules }) {
   };
   if (scope === 'national') {
     metrics.jobShare = shareTable(countBy(rows, (r) => r.jobType), (k) => JOB_LABELS[k], { minCell: rules.minCell, limit: 10 });
+    metrics.groupShare = groupMetric(rows, rules);
     metrics.familyShare = shareTable(
       // Jobs outside a family count as 'Other jobs', so shares are of all estimates.
       countBy(rows, (r) => Object.keys(FAMILIES).find((f) => FAMILIES[f].jobTypes.includes(r.jobType)) || 'other-jobs'),
@@ -340,9 +360,11 @@ function validateWindow(snapshots, { independentCount, previousN, rules = RULES 
   for (const s of snapshots) {
     for (const table of shareTables(s.metrics)) {
       const sum = table.reduce((a, r) => a + r.share, 0);
-      if (table.length && sum !== 100) problems.push(`${s.scope}/${s.key}: shares sum to ${sum}`);
+      const hasHidden = table.some((r) => r.share === null);
+      if (table.length && !hasHidden && sum !== 100) problems.push(`${s.scope}/${s.key}: shares sum to ${sum}`);
+      if (hasHidden && sum > 100) problems.push(`${s.scope}/${s.key}: shares sum to ${sum}`);
       for (const row of table) {
-        if (row.key !== 'other' && row.count < rules.minCell) {
+        if (row.key !== 'other' && row.share !== null && row.count < rules.minCell) {
           problems.push(`${s.scope}/${s.key}: cell ${row.key} has ${row.count}, below ${rules.minCell}`);
         }
       }

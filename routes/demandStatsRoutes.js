@@ -102,7 +102,8 @@ router.get('/history', async (req, res) => {
         windowLabel: '$doc.windowLabel',
         caption: '$doc.caption',
         suppressed: '$doc.suppressed',
-        jobShare: { $slice: [{ $ifNull: ['$doc.metrics.jobShare', []] }, 5] }
+        jobShare: { $slice: [{ $ifNull: ['$doc.metrics.jobShare', []] }, 5] },
+        groupShare: { $ifNull: ['$doc.metrics.groupShare', null] }
       } }
     ]);
     cache(res);

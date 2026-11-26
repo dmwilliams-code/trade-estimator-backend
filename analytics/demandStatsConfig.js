@@ -40,6 +40,17 @@ const JOB_LABELS = {
   'tree-surgery': 'Tree surgery'
 };
 
+// Fixed groups for the Demand Index mix-over-time chart (DemandMixOverTimeSpec.md).
+// Separate from FAMILIES so changing the chart can never change article blocks.
+// Order is the chart order; 'everything-else' catches every other job type.
+const CHART_GROUPS = [
+  { key: 'extensions', label: 'Extensions', jobTypes: ['single-storey-extension', 'double-storey-extension', 'kitchen-extension'] },
+  { key: 'plastering', label: 'Plastering', jobTypes: ['plastering-room', 'plastering-house'] },
+  { key: 'bathroom', label: 'Bathroom', jobTypes: ['bathroom-install'] },
+  { key: 'loft', label: 'Loft conversions', jobTypes: ['loft-conversion', 'loft-conversion-dormer'] },
+  { key: 'everything-else', label: 'Everything else', jobTypes: [] }
+];
+
 const FAMILIES = {
   extensions: { label: 'Extensions', noun: 'extension', jobTypes: ['single-storey-extension', 'double-storey-extension', 'kitchen-extension'] },
   loft: { label: 'Loft conversions', noun: 'loft', jobTypes: ['loft-conversion', 'loft-conversion-dormer'] },
@@ -69,6 +80,7 @@ module.exports = {
   RULES,
   JOB_LABELS,
   FAMILIES,
+  CHART_GROUPS,
   AREA_SIZES,
   PROJECT_SIZE_JOBS,
   PROJECT_SIZE_LABELS,

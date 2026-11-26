@@ -152,3 +152,17 @@ run('room size mix only for jobs priced by the room, not rewires', () => {
   assert.strictEqual(snaps.find((s) => s.key === 'rewire').metrics.size, null);
   assert.strictEqual(snaps.find((s) => s.key === 'bathroom-install').metrics.size.kind, 'projectSize');
 });
+
+run('group share: five rows in fixed order, small group shown as null, shown shares never over 100', () => {
+  const data = [...rows(30), ...rows(12, { jobType: 'plastering-room', areaQuantity: null, projectSize: 'medium' }),
+    ...rows(4, { jobType: 'bathroom-install', category: 'plumbing', areaQuantity: null, projectSize: 'small' }),
+    ...rows(9, { jobType: 'rewire', category: 'electrical', areaQuantity: null, projectSize: 'medium' })];
+  const snaps = buildWindowSnapshots(data, OCTOBER, { now: NOW, regionNames: REGIONS });
+  const g = snaps.find((s) => s.scope === 'national').metrics.groupShare;
+  assert.deepStrictEqual(g.map((r) => r.key), ['extensions', 'plastering', 'bathroom', 'loft', 'everything-else']);
+  assert.strictEqual(g.find((r) => r.key === 'bathroom').share, null);
+  assert.strictEqual(g.find((r) => r.key === 'loft').share, null);
+  assert.strictEqual(g.find((r) => r.key === 'extensions').share, 55);
+  assert.ok(g.reduce((a, r) => a + (r.share || 0), 0) <= 100);
+  assert.strictEqual(validateWindow(snaps, { independentCount: 55, previousN: null }).ok, true);
+});

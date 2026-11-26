@@ -165,6 +165,20 @@ async function main() {
     const from = win.windowStart < floor ? floor : win.windowStart;
     const independentCount = await Estimate.countDocuments(populationMatch(from, win.windowEnd));
     const check = validateWindow(snaps, { independentCount, previousN: await previousNationalN(win), rules });
+
+    // A forced rebuild of a finished period must reproduce its earlier count.
+    // If it doesn't, estimates in that period changed, and the earlier
+    // published figures would silently shift, so the period is not written.
+    if (FORCE && win.complete) {
+      const earlier = await DemandStat.findOne({ windowType: win.windowType, windowStart: win.windowStart, scope: 'national' })
+        .sort({ builtAt: -1 })
+        .lean();
+      const nowN = (snaps.find((s) => s.scope === 'national') || {}).n;
+      if (earlier && earlier.n !== nowN) {
+        check.ok = false;
+        check.problems.push(`forced rebuild count ${nowN} differs from the earlier build's ${earlier.n}`);
+      }
+    }
     const status = check.needsReview ? 'needs_review' : 'published';
     summarise(win, snaps, check, status);
 
