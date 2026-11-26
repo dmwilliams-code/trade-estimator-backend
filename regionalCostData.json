@@ -6,15 +6,47 @@
       "metaTitle": "2026 Plumbing Costs",
       "description": "Professional plumbing services including boiler installations, bathroom fitting, emergency repairs, and central heating work",
       "commonJobs": [
-        { "name": "Boiler installation", "typicalCost": "£2,000 - £3,500" },
-        { "name": "Full bathroom installation", "typicalCost": "£3,000 - £5,500" },
-        { "name": "Emergency leak repair", "typicalCost": "£80 - £200" },
-        { "name": "Central heating system", "typicalCost": "£3,500 - £6,000" },
-        { "name": "New radiator installation", "typicalCost": "£200 - £400 per radiator" }
+        {
+          "name": "Boiler installation",
+          "typicalCost": "£2,000 - £3,500"
+        },
+        {
+          "name": "Full bathroom installation",
+          "typicalCost": "£3,000 - £5,500"
+        },
+        {
+          "name": "Emergency leak repair",
+          "typicalCost": "£80 - £200"
+        },
+        {
+          "name": "Central heating system",
+          "typicalCost": "£3,500 - £6,000"
+        },
+        {
+          "name": "New radiator installation",
+          "typicalCost": "£200 - £400 per radiator"
+        }
       ],
       "hourlyRate": "£45 - £80",
       "dayRate": "£300 - £500",
-      "searchIntent": "plumbing costs, plumber prices, boiler installation cost, bathroom plumbing rates"
+      "searchIntent": "plumbing costs, plumber prices, boiler installation cost, bathroom plumbing rates",
+      "relatedArticles": [
+        {
+          "slug": "bathroom-renovation-cost-uk-2026",
+          "title": "Bathroom Renovation Cost UK 2026",
+          "excerpt": "Full refit prices from £3,500–£12,000 with tiling, wet room and regional breakdowns."
+        },
+        {
+          "slug": "boiler-installation-costs-uk-2026",
+          "title": "New Boiler Installation Cost UK 2026",
+          "excerpt": "Combi, system and heat pump prices from £1,800–£4,500 fitted. Includes £7,500 BUS grant info."
+        },
+        {
+          "slug": "house-rewire-cost-uk-2026",
+          "title": "House Rewire Cost UK 2026",
+          "excerpt": "Rewiring often uncovers plumbing issues. See costs by bedrooms from £2,500–£6,000+."
+        }
+      ]
     },
     "electrical": {
       "name": "Electrical",
@@ -22,15 +54,47 @@
       "metaTitle": "2026 Electrical Costs",
       "description": "Certified electrician services including full rewires, consumer unit upgrades, EV charger installation, and electrical safety inspections",
       "commonJobs": [
-        { "name": "Full house rewire", "typicalCost": "£3,000 - £6,000" },
-        { "name": "Consumer unit replacement", "typicalCost": "£400 - £900" },
-        { "name": "Additional socket installation", "typicalCost": "£80 - £150" },
-        { "name": "EV charger installation", "typicalCost": "£800 - £1,500" },
-        { "name": "New circuit installation", "typicalCost": "£200 - £500" }
+        {
+          "name": "Full house rewire",
+          "typicalCost": "£3,000 - £6,000"
+        },
+        {
+          "name": "Consumer unit replacement",
+          "typicalCost": "£400 - £900"
+        },
+        {
+          "name": "Additional socket installation",
+          "typicalCost": "£80 - £150"
+        },
+        {
+          "name": "EV charger installation",
+          "typicalCost": "£800 - £1,500"
+        },
+        {
+          "name": "New circuit installation",
+          "typicalCost": "£200 - £500"
+        }
       ],
       "hourlyRate": "£50 - £90",
       "dayRate": "£350 - £600",
-      "searchIntent": "electrical costs, electrician prices, house rewiring cost, electrical installation rates"
+      "searchIntent": "electrical costs, electrician prices, house rewiring cost, electrical installation rates",
+      "relatedArticles": [
+        {
+          "slug": "house-rewire-cost-uk-2026",
+          "title": "How Much to Rewire a House? UK 2026 Costs",
+          "excerpt": "Full rewiring costs £2,500–£6,000+ by bedrooms. Amendment 3/4 compliance and EV prep included."
+        },
+        {
+          "slug": "full-vs-partial-rewire-uk-2026",
+          "title": "Full vs Partial Rewire: Which Do You Need?",
+          "excerpt": "Compare costs, safety trade-offs and when a local upgrade is enough for your home."
+        },
+        {
+          "slug": "boiler-installation-costs-uk-2026",
+          "title": "New Boiler Installation Cost UK 2026",
+          "excerpt": "Boiler swaps often need electrical upgrades. See what to budget from £1,800–£4,500."
+        }
+      ]
     },
     "building": {
       "name": "Building & Construction",
@@ -38,15 +102,52 @@
       "metaTitle": "2026 Building & Construction Costs",
       "description": "General building services including extensions, loft conversions, structural work, and full house renovations",
       "commonJobs": [
-        { "name": "Single-storey extension", "typicalCost": "£25,000 - £50,000" },
-        { "name": "Loft conversion", "typicalCost": "£20,000 - £45,000" },
-        { "name": "Garage conversion", "typicalCost": "£8,000 - £15,000" },
-        { "name": "Kitchen extension", "typicalCost": "£15,000 - £30,000" },
-        { "name": "New build garden room", "typicalCost": "£12,000 - £25,000" }
+        {
+          "name": "Single-storey extension",
+          "typicalCost": "£25,000 - £50,000"
+        },
+        {
+          "name": "Loft conversion",
+          "typicalCost": "£20,000 - £45,000"
+        },
+        {
+          "name": "Garage conversion",
+          "typicalCost": "£8,000 - £15,000"
+        },
+        {
+          "name": "Kitchen extension",
+          "typicalCost": "£15,000 - £30,000"
+        },
+        {
+          "name": "New build garden room",
+          "typicalCost": "£12,000 - £25,000"
+        }
       ],
       "hourlyRate": "N/A (typically quoted per project)",
       "dayRate": "£180 - £300 per tradesperson",
-      "searchIntent": "building costs, construction prices, extension cost, loft conversion prices"
+      "searchIntent": "building costs, construction prices, extension cost, loft conversion prices",
+      "relatedArticles": [
+        {
+          "slug": "house-extension-cost-uk-2026",
+          "title": "House Extension Cost Per m² UK 2026",
+          "excerpt": "Single and double-storey extensions from £1,500–£3,000+ per m² with planning rules explained."
+        },
+        {
+          "slug": "kitchen-extension-cost-per-square-metre-uk-2026",
+          "title": "Kitchen Extension Cost Per m² (2026)",
+          "excerpt": "Side-return, wraparound and single-storey kitchen extensions from £1,500–£2,800 per m²."
+        },
+        {
+          "slug": "loft-conversion-costs-uk-2026",
+          "title": "Loft Conversion Cost UK 2026",
+          "excerpt": "Dormer, hip-to-gable, Velux and mansard prices from £20,000–£65,000 by type and region."
+        },
+        {
+          "slug": "3-bed-house-renovation-costs-uk-2026",
+          "title": "Cost to Renovate a 3-Bed House UK 2026",
+          "excerpt": "Cosmetic to back-to-brick budgets from £15,000–£130,000+ compared room by room."
+        }
+      ]
     },
     "roofing": {
       "name": "Roofing",
@@ -54,15 +155,47 @@
       "metaTitle": "2026 Roofing Costs",
       "description": "Professional roofing services including full replacements, repairs, flat roofing, and chimney work",
       "commonJobs": [
-        { "name": "Full roof replacement", "typicalCost": "£5,000 - £12,000" },
-        { "name": "Roof repair", "typicalCost": "£200 - £1,000" },
-        { "name": "Flat roof installation", "typicalCost": "£2,500 - £5,500" },
-        { "name": "Chimney repairs", "typicalCost": "£400 - £1,200" },
-        { "name": "Ridge tile repairs", "typicalCost": "£300 - £800" }
+        {
+          "name": "Full roof replacement",
+          "typicalCost": "£5,000 - £12,000"
+        },
+        {
+          "name": "Roof repair",
+          "typicalCost": "£200 - £1,000"
+        },
+        {
+          "name": "Flat roof installation",
+          "typicalCost": "£2,500 - £5,500"
+        },
+        {
+          "name": "Chimney repairs",
+          "typicalCost": "£400 - £1,200"
+        },
+        {
+          "name": "Ridge tile repairs",
+          "typicalCost": "£300 - £800"
+        }
       ],
       "hourlyRate": "£35 - £60",
       "dayRate": "£180 - £350",
-      "searchIntent": "roofing costs, roof replacement prices, roofer rates, roof repair costs"
+      "searchIntent": "roofing costs, roof replacement prices, roofer rates, roof repair costs",
+      "relatedArticles": [
+        {
+          "slug": "house-extension-cost-uk-2026",
+          "title": "House Extension Cost Per m² UK 2026",
+          "excerpt": "Extensions need roofing work. See full build costs from £1,500–£3,000+ per m²."
+        },
+        {
+          "slug": "loft-conversion-costs-uk-2026",
+          "title": "Loft Conversion Cost UK 2026",
+          "excerpt": "Loft conversions involve major roof work. Costs from £20,000–£65,000 by type."
+        },
+        {
+          "slug": "3-bed-house-renovation-costs-uk-2026",
+          "title": "Cost to Renovate a 3-Bed House UK 2026",
+          "excerpt": "Full renovation budgets including roofing from £15,000–£130,000+."
+        }
+      ]
     },
     "painting": {
       "name": "Painting & Decorating",
@@ -70,15 +203,47 @@
       "metaTitle": "2026 Painting & Decorating Costs",
       "description": "Interior and exterior painting, wallpaper hanging, and professional decorating services",
       "commonJobs": [
-        { "name": "Whole house interior", "typicalCost": "£2,500 - £5,500" },
-        { "name": "Single room painting", "typicalCost": "£300 - £700" },
-        { "name": "Exterior house painting", "typicalCost": "£3,000 - £7,000" },
-        { "name": "Wallpaper hanging", "typicalCost": "£200 - £400 per room" },
-        { "name": "Ceiling painting", "typicalCost": "£150 - £350 per room" }
+        {
+          "name": "Whole house interior",
+          "typicalCost": "£2,500 - £5,500"
+        },
+        {
+          "name": "Single room painting",
+          "typicalCost": "£300 - £700"
+        },
+        {
+          "name": "Exterior house painting",
+          "typicalCost": "£3,000 - £7,000"
+        },
+        {
+          "name": "Wallpaper hanging",
+          "typicalCost": "£200 - £400 per room"
+        },
+        {
+          "name": "Ceiling painting",
+          "typicalCost": "£150 - £350 per room"
+        }
       ],
       "hourlyRate": "£25 - £45",
       "dayRate": "£150 - £280",
-      "searchIntent": "painting costs, decorator prices, house painting rates, interior decorating costs"
+      "searchIntent": "painting costs, decorator prices, house painting rates, interior decorating costs",
+      "relatedArticles": [
+        {
+          "slug": "plastering-cost-uk-2026",
+          "title": "How Much Does Plastering Cost? UK 2026",
+          "excerpt": "Plastering before painting: £150–£500 per room. Includes mist coat guide for fresh plaster."
+        },
+        {
+          "slug": "3-bed-house-renovation-costs-uk-2026",
+          "title": "Cost to Renovate a 3-Bed House UK 2026",
+          "excerpt": "Full redecoration budgets from cosmetic refresh (£15k) to complete renovation (£130k+)."
+        },
+        {
+          "slug": "bathroom-renovation-cost-uk-2026",
+          "title": "Bathroom Renovation Cost UK 2026",
+          "excerpt": "Bathroom painting is part of the refit. See full costs from £3,500–£12,000."
+        }
+      ]
     },
     "landscaping": {
       "name": "Garden Landscaping",
@@ -86,15 +251,42 @@
       "metaTitle": "2026 Garden Landscaping Costs",
       "description": "Garden design, patio installation, decking, fencing, and complete outdoor transformations",
       "commonJobs": [
-        { "name": "Patio installation", "typicalCost": "£2,000 - £5,500" },
-        { "name": "Artificial lawn", "typicalCost": "£1,500 - £4,000" },
-        { "name": "Garden decking", "typicalCost": "£2,500 - £5,500" },
-        { "name": "Fencing installation", "typicalCost": "£1,000 - £3,000" },
-        { "name": "Complete garden redesign", "typicalCost": "£5,000 - £15,000" }
+        {
+          "name": "Patio installation",
+          "typicalCost": "£2,000 - £5,500"
+        },
+        {
+          "name": "Artificial lawn",
+          "typicalCost": "£1,500 - £4,000"
+        },
+        {
+          "name": "Garden decking",
+          "typicalCost": "£2,500 - £5,500"
+        },
+        {
+          "name": "Fencing installation",
+          "typicalCost": "£1,000 - £3,000"
+        },
+        {
+          "name": "Complete garden redesign",
+          "typicalCost": "£5,000 - £15,000"
+        }
       ],
       "hourlyRate": "£30 - £55",
       "dayRate": "£170 - £320",
-      "searchIntent": "landscaping costs, garden design prices, patio installation cost, decking rates"
+      "searchIntent": "landscaping costs, garden design prices, patio installation cost, decking rates",
+      "relatedArticles": [
+        {
+          "slug": "house-extension-cost-uk-2026",
+          "title": "House Extension Cost Per m² UK 2026",
+          "excerpt": "Extensions often require garden rework. See full costs from £1,500–£3,000+ per m²."
+        },
+        {
+          "slug": "3-bed-house-renovation-costs-uk-2026",
+          "title": "Cost to Renovate a 3-Bed House UK 2026",
+          "excerpt": "Full property renovation including garden costs from £15,000–£130,000+."
+        }
+      ]
     }
   },
   "baseRates": {
@@ -135,520 +327,1248 @@
       "name": "Central London",
       "fullName": "Central London (Westminster, Chelsea, City)",
       "multiplier": 1.55,
+      "titleVariant": "B",
       "tier": "Tier 1 (Prime)",
       "regionalInsights": "Central London commands the UK's highest home improvement costs due to ULEZ charges (£12.50/day for non-compliant vehicles), premium parking permits (£150-300/day for trade vehicles), and intense competition for skilled labour. Westminster and Chelsea contractors factor in congestion delays, limited material storage space, and the premium expected by high-net-worth homeowners. Material logistics require careful planning with restricted delivery windows.",
       "population": "1.2 million",
-      "avgPropertyValue": "£1,200,000"
+      "avgPropertyValue": "£1,200,000",
+      "defaultPostcode": "SW1A 1AA",
+      "localMetaTitle": "Central London Renovation Costs 2026: How Much More Do You Pay? | EstimateAI",
+      "localMetaDescription": "Renovation costs in Central London run 55% above the UK average in 2026. A standard bathroom costs £10,100, a kitchen £18,600, a full rewire £7,400. ULEZ charges, parking permits and premium labour rates all contribute. Free instant estimate for your Westminster, Chelsea or City postcode."
     },
     {
       "slug": "london-greater",
       "name": "Greater London",
       "fullName": "Greater London (Croydon, Enfield, Bromley)",
       "multiplier": 1.35,
+      "titleVariant": "B",
       "tier": "Tier 2 (London)",
       "regionalInsights": "Greater London boroughs like Croydon and Enfield maintain elevated costs due to proximity to central zones, though slightly reduced from prime areas. Contractors still navigate ULEZ boundaries, moderate parking fees, and strong demand from London's commuter belt. Travel times between jobs remain significant, and material costs reflect London supplier premiums despite being outside Zone 1-2.",
       "population": "8 million",
-      "avgPropertyValue": "£550,000"
+      "avgPropertyValue": "£550,000",
+      "defaultPostcode": "CR0 1AA",
+      "localMetaTitle": "Greater London Renovation Costs 2026: Outer Borough Price Guide | EstimateAI",
+      "localMetaDescription": "Greater London renovation costs run 35% above the UK average in 2026, lower than central zones but still significantly above national rates. Covers Croydon, Enfield, Bromley and all outer boroughs. Free instant estimate adjusted for your exact London postcode."
     },
     {
       "slug": "birmingham",
       "name": "Birmingham",
       "fullName": "Birmingham",
       "multiplier": 1.15,
+      "titleVariant": "B",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Birmingham's status as the UK's second city drives moderate cost increases above the national baseline. The city's extensive urban area creates longer travel times between jobs, while recent HS2 development and urban regeneration have increased demand for skilled trades. Material suppliers serve the broader Midlands region from Birmingham hubs, keeping logistics competitive.",
       "population": "1.14 million",
-      "avgPropertyValue": "£245,000"
+      "avgPropertyValue": "£245,000",
+      "defaultPostcode": "B1 1AA",
+      "localMetaTitle": "Birmingham Renovation Costs 2026: Local Prices for Every Job Type | EstimateAI",
+      "localMetaDescription": "Birmingham renovation costs run 15% above the UK average in 2026. Bathroom from £7,500, extension from £55,200. HS2 demand is keeping trade rates elevated."
     },
     {
       "slug": "manchester",
       "name": "Manchester",
       "fullName": "Manchester",
       "multiplier": 1.15,
+      "titleVariant": "A",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Manchester's booming property market and Northern Powerhouse investment have elevated construction costs. High demand for renovations in gentrifying areas like Ancoats and Northern Quarter increases competition for quality tradespeople. The city's compact urban core means efficient job scheduling, though traffic congestion during peak hours impacts daily rates.",
       "population": "550,000",
-      "avgPropertyValue": "£255,000"
+      "avgPropertyValue": "£255,000",
+      "defaultPostcode": "M1 1AA",
+      "localMetaTitle": "Manchester Renovation Costs 2026: Local Trade Rates & Project Prices | EstimateAI",
+      "localMetaDescription": "Manchester renovation costs run 15% above the UK average in 2026. Bathroom refit from £7,500, extension from £55,200. Free postcode estimate."
     },
     {
       "slug": "glasgow",
       "name": "Glasgow",
       "fullName": "Glasgow",
       "multiplier": 1.15,
+      "titleVariant": "A",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Scotland's largest city maintains above-average costs due to strong demand in the West End and Merchant City areas. Scottish building regulations can differ from England, requiring specialist knowledge. Material costs reflect transport from central UK hubs, while skilled trades command premium rates due to competition with Edinburgh's market.",
       "population": "635,000",
-      "avgPropertyValue": "£185,000"
+      "avgPropertyValue": "£185,000",
+      "defaultPostcode": "G1 1AA",
+      "localMetaTitle": "Glasgow Renovation Costs 2026: Tenements, Roofing & Bathroom Prices | EstimateAI",
+      "localMetaDescription": "How much does it cost to renovate a house in Glasgow in 2026? Full guide covering tenement renovations, roof replacement, bathroom costs, Building Warrants and Common Repair Schemes. Free instant estimate for your Glasgow postcode.",
+      "localContent": [
+        {
+          "heading": "Tenement Renovation Costs in Glasgow",
+          "body": "Glasgow's tenement properties, the four-storey sandstone flatted dwellings that define neighbourhoods from Partick to Shawlands, come with renovation considerations unique to this building type. Because tenements share structural elements (close, roof, back courts, and external walls) across multiple flats, renovation works often require owner co-operation and can trigger Common Repair Schemes administered by Glasgow City Council. A full tenement flat renovation (kitchen, bathroom, replastering, rewire) typically costs £35,000–£70,000 in Glasgow depending on condition and specification. Sandstone cleaning and repointing of a full tenement block, usually a shared cost, runs £8,000–£18,000 per flat when split across all owners. Internal tenement flat layouts also often require a structural engineer's sign-off for any wall removals due to load-bearing considerations from upper floors.",
+          "costs": [
+            {
+              "item": "Full tenement flat renovation",
+              "range": "£35,000 – £70,000"
+            },
+            {
+              "item": "Sandstone repointing (per flat share)",
+              "range": "£8,000 – £18,000"
+            },
+            {
+              "item": "Tenement close renovation (per flat share)",
+              "range": "£2,500 – £6,000"
+            },
+            {
+              "item": "Structural engineer assessment",
+              "range": "£500 – £1,200"
+            }
+          ]
+        },
+        {
+          "heading": "Common Repair Schemes & Building Warrants in Glasgow",
+          "body": "Glasgow homeowners should be aware of two regulatory frameworks that directly affect renovation costs and timelines. Common Repair Schemes (CRS) are notices issued by Glasgow City Council requiring all owners in a tenement block to co-fund essential repairs, typically roof, guttering, chimneys, or structural elements. CRS notices are legally binding; refusal can result in the council carrying out works and billing owners at above-market rates. Budget £2,000–£12,000 as your share depending on scope. Building Warrants are required in Scotland for most structural work, extensions, and conversions, more broadly than England's Building Regulations. A Building Warrant from Glasgow City Council costs £100–£2,000 depending on project value and typically takes 20–35 working days to be granted. Works cannot legally commence until the warrant is issued, so factor this into your project timeline.",
+          "costs": [
+            {
+              "item": "Building Warrant fee (typical project)",
+              "range": "£100 – £2,000"
+            },
+            {
+              "item": "Common Repair Scheme (typical share)",
+              "range": "£2,000 – £12,000"
+            },
+            {
+              "item": "Building Warrant application (via agent)",
+              "range": "£500 – £1,500"
+            },
+            {
+              "item": "Completion Certificate inspection",
+              "range": "£200 – £400"
+            }
+          ]
+        },
+        {
+          "heading": "New Roof Cost in Glasgow 2026",
+          "body": "Roof replacement in Glasgow carries specific cost considerations that differ from the rest of the UK. The majority of Glasgow's tenement and Victorian housing stock uses natural slate, either original Scots slate or Welsh slate, which is significantly more expensive to repair and replace than the concrete tiles common in English housing. A full roof replacement on a Glasgow tenement requires specialist slate roofing contractors who understand the pitch angles, sarking board construction, and lead flashing details typical of this building type. For shared tenement roofs, the cost is split across all flat owners and must usually be approved through a formal owner agreement or triggered by a Common Repair Scheme notice. A full slate roof replacement on a tenement block typically costs £18,000–£40,000 in total, with each flat's share depending on the number of owners. For a standard Glasgow terraced or semi-detached property, a full roof replacement using slate runs £8,000–£16,000 compared to £5,000–£10,000 for concrete tiles. Partial re-slating and repairs are often a more cost-effective option where the underlying structure is sound, a roofer's inspection at £150–£300 will confirm whether full replacement is necessary. Always use a contractor registered with the National Federation of Roofing Contractors (NFRC) and ensure they have specific experience with slate roofing in Glasgow's climate.",
+          "costs": [
+            {
+              "item": "Full slate roof replacement, terraced/semi",
+              "range": "£8,000 – £16,000"
+            },
+            {
+              "item": "Full tenement roof replacement (total)",
+              "range": "£18,000 – £40,000"
+            },
+            {
+              "item": "Tenement roof share (per flat, 4 owners)",
+              "range": "£4,500 – £10,000"
+            },
+            {
+              "item": "Partial re-slating (per m²)",
+              "range": "£65 – £120"
+            },
+            {
+              "item": "Lead flashing replacement",
+              "range": "£300 – £900"
+            },
+            {
+              "item": "Roof inspection and report",
+              "range": "£150 – £300"
+            }
+          ]
+        },
+        {
+          "heading": "Bathroom Renovation Costs in Glasgow 2026",
+          "body": "A standard bathroom renovation in Glasgow costs £7,200–£9,800 in 2026, reflecting Glasgow's 1.15x regional multiplier applied to the UK baseline of £6,500. The additional cost factors specific to Glasgow properties are worth budgeting for carefully. Glasgow sits in a moderately hard water area, and older tenement properties frequently have galvanised steel or lead pipework that requires partial or full replacement before a new bathroom installation can be completed to current standards. Pipe replacement in a tenement flat adds £800–£2,500 to a standard bathroom refit depending on accessibility and the extent of the affected pipework. Tenement bathrooms are often positioned centrally within the flat with limited natural light and restricted access for waste runs, which can increase labour time and therefore cost compared to a standard house bathroom. For properties in conservation areas, including much of Glasgow's West End, planning considerations may apply to external alterations such as new soil pipe runs on the building facade. A standard bathroom renovation in Glasgow covering new suite, tiling, plumbing, and decoration typically takes 7–12 days depending on specification and access.",
+          "costs": [
+            {
+              "item": "Standard bathroom renovation (Glasgow)",
+              "range": "£7,200 – £9,800"
+            },
+            {
+              "item": "Pipework replacement (partial)",
+              "range": "£800 – £2,500"
+            },
+            {
+              "item": "Wet room installation (Glasgow)",
+              "range": "£9,500 – £14,000"
+            },
+            {
+              "item": "En-suite installation",
+              "range": "£4,500 – £7,500"
+            },
+            {
+              "item": "Bathroom tiling only (per m²)",
+              "range": "£45 – £80"
+            }
+          ]
+        },
+        {
+          "heading": "Renovating in Scotland: Key Differences from England & Wales",
+          "body": "Homeowners renovating in Glasgow and across Scotland face a distinct regulatory and cost environment compared to England and Wales. Building Warrants, Scotland's equivalent of Building Regulations approval, are required for a broader range of works than south of the border, including most structural alterations, extensions, loft conversions, and changes to drainage. Unlike England where some works are self-certified by registered tradespeople under the Competent Person Scheme, Scottish Building Warrants require formal approval from the local authority before work begins. This adds both cost and time to projects. The Scottish planning system also differs in certain respects, including stricter controls in conservation areas and the handling of listed building consents. For tenement and flatted properties, the Tenements (Scotland) Act 2004 governs how shared costs and decisions are handled between owners, understanding this legislation is essential before starting any work that affects shared elements. Scottish solicitors (rather than English conveyancers) handle property transactions, and the title deeds for older Glasgow properties often contain real burdens and conditions that restrict certain types of alteration. Always check your title deeds before commissioning structural work. For cost comparison, renovation projects across Scottish cities including Edinburgh and Aberdeen share many of these regulatory considerations, though local trade rates and property types vary.",
+          "costs": [
+            {
+              "item": "Building Warrant (minor works)",
+              "range": "£100 – £400"
+            },
+            {
+              "item": "Building Warrant (extension/conversion)",
+              "range": "£600 – £2,000"
+            },
+            {
+              "item": "Listed Building Consent application",
+              "range": "£500 – £1,500"
+            },
+            {
+              "item": "Scottish solicitor conveyancing check",
+              "range": "£300 – £800"
+            },
+            {
+              "item": "Structural engineer report (Scotland)",
+              "range": "£500 – £1,200"
+            }
+          ]
+        }
+      ]
     },
     {
       "slug": "liverpool",
       "name": "Liverpool",
       "fullName": "Liverpool",
       "multiplier": 1.15,
+      "titleVariant": "B",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Liverpool's urban renewal and waterfront regeneration drive steady demand for home improvements. The city's compact size allows contractors to serve multiple jobs daily, though popular areas like Baltic Triangle and Georgian Quarter command higher rates. Port access keeps some material costs competitive compared to inland cities.",
       "population": "500,000",
-      "avgPropertyValue": "£195,000"
+      "avgPropertyValue": "£195,000",
+      "defaultPostcode": "L1 1AA",
+      "localMetaTitle": "Liverpool Renovation Costs 2026: Local Prices & Trade Rates | EstimateAI",
+      "localMetaDescription": "How much does renovation cost in Liverpool in 2026? Costs run 15% above the UK average with strong demand in the Baltic Triangle and Georgian Quarter. Bathroom from £7,500, full rewire from £5,500. Port access keeps some material costs competitive. Free instant estimate for your Liverpool postcode."
     },
     {
       "slug": "leeds",
       "name": "Leeds",
       "fullName": "Leeds",
       "multiplier": 1.15,
+      "titleVariant": "B",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Leeds combines Yorkshire's largest city premium with strong commercial and residential development. The financial district's growth increases demand for skilled trades, while areas like Chapel Allerton and Roundhay see competitive bidding for quality contractors. M1 corridor access facilitates efficient material delivery from national distributors.",
       "population": "800,000",
-      "avgPropertyValue": "£240,000"
+      "avgPropertyValue": "£240,000",
+      "defaultPostcode": "LS1 1AA",
+      "localMetaTitle": "Leeds Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "Leeds renovation costs run 15% above the UK average in 2026. Victorian terraces in LS6 and LS7 often need replastering and rewiring. Bathroom from £7,500."
     },
     {
       "slug": "sheffield",
       "name": "Sheffield",
       "fullName": "Sheffield",
       "multiplier": 1.15,
+      "titleVariant": "A",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Sheffield's hilly terrain and diverse neighbourhoods create varied pricing. Contractors factor in challenging access to properties in areas like Crookes and Broomhill. The city's industrial heritage means abundant local suppliers, though skilled trades for period property renovations command premium rates in suburbs like Ecclesall and Dore.",
       "population": "585,000",
-      "avgPropertyValue": "£215,000"
+      "avgPropertyValue": "£215,000",
+      "defaultPostcode": "S1 1AA",
+      "localMetaTitle": "Sheffield Renovation Costs 2026: Victorian Terraces, Extensions & Rewires | EstimateAI",
+      "localMetaDescription": "How much does renovation cost in Sheffield in 2026? Victorian terraces in S10 and S11 drive demand for rewires from £4,025 and replastering from £520. Extensions from £57,375. Free postcode estimate.",
+      "localContent": [
+        {
+          "heading": "Victorian Terrace Renovation Costs in Sheffield 2026",
+          "body": "Sheffield's most popular housing type for renovation is the Victorian terrace, concentrated in suburbs like Crookes, Broomhill, Nether Edge, and Walkley. These properties, typically 3–4 bedrooms built between 1870 and 1910, share a common set of renovation requirements that Sheffield contractors know well. Most will have original solid brick walls (no cavity insulation), original timber floors prone to movement, single-glazed sash windows, and wiring that is at least partially original or dating from the 1960s–70s. A full renovation of a Sheffield Victorian terrace, covering rewire, replastering, new kitchen, bathroom, and decoration, typically costs £60,000–£120,000 depending on the level of specification and how much of the original fabric is retained. Partial projects are common: rewire plus replaster (£12,000–£20,000), kitchen and bathroom (£15,000–£28,000), or external repointing and window replacement (£8,000–£18,000). Sheffield's hilly terrain means some terraced streets have difficult vehicular access, which can add 5–10% to skip hire and material delivery costs in areas like Crookes and Stannington.",
+          "costs": [
+            {
+              "item": "Full Victorian terrace renovation",
+              "range": "£60,000 – £120,000"
+            },
+            {
+              "item": "Rewire + replaster (3-bed terrace)",
+              "range": "£12,000 – £20,000"
+            },
+            {
+              "item": "Kitchen + bathroom (mid-spec)",
+              "range": "£15,000 – £28,000"
+            },
+            {
+              "item": "External repointing + windows",
+              "range": "£8,000 – £18,000"
+            },
+            {
+              "item": "Solid wall insulation (internal)",
+              "range": "£8,000 – £15,000"
+            }
+          ]
+        },
+        {
+          "heading": "House Extension Costs in Sheffield 2026",
+          "body": "Single-storey extensions in Sheffield cost £57,375–£70,000 for a standard 20m² project in 2026, based on Sheffield's 1.15x regional multiplier. Sheffield's varied topography has a direct impact on extension costs: properties on slopes in areas like Crookes, Greystones, and Hillsborough often require stepped or reinforced foundations, adding £3,000–£8,000 to groundwork costs. Rear extensions are the most common project type, typically used to create open-plan kitchen-dining space. Planning permission is not required for most single-storey rear extensions under permitted development rules, provided the extension does not exceed 4m depth for a detached house or 3m for a semi. Sheffield has a number of conservation areas, including parts of Broomhill, Ranmoor, and Endcliffe, where permitted development rights are restricted and planning permission will be required. Allow 8–12 weeks for planning approval if required. Sheffield City Council's planning portal provides a pre-application advice service at £100–£300 that can confirm whether permission is needed before you commit to design costs.",
+          "costs": [
+            {
+              "item": "Single-storey extension (20m², Sheffield)",
+              "range": "£57,375 – £70,000"
+            },
+            {
+              "item": "Double-storey extension (30m²)",
+              "range": "£86,000 – £108,000"
+            },
+            {
+              "item": "Loft conversion (Sheffield)",
+              "range": "£47,250 – £58,000"
+            },
+            {
+              "item": "Sloped site groundworks premium",
+              "range": "£3,000 – £8,000"
+            },
+            {
+              "item": "Pre-application planning advice",
+              "range": "£100 – £300"
+            }
+          ]
+        },
+        {
+          "heading": "Rewiring Costs in Sheffield 2026",
+          "body": "A full house rewire in Sheffield costs £4,025–£6,038 for a standard 3-4 bedroom property in 2026. Sheffield's high concentration of pre-1970 housing makes rewiring one of the most common renovation projects in the city. Victorian and Edwardian properties in S10 and S11 frequently retain rubber-insulated wiring (known as vulcanised rubber insulation or VRI) which is at end of life and poses a fire risk, any survey of a Sheffield period property should identify whether rewiring is needed before purchase. Sheffield electricians are generally competitively priced compared to Leeds and Manchester, but demand is high and lead times of 4–8 weeks for full rewires are common. The rewire of a Victorian terrace typically takes 5–8 days for a two-person team, with replastering required afterwards to reinstate any chased cable runs, budget £2,500–£5,000 for the making-good work in addition to the electrical costs. All rewires in Sheffield must be notified to Sheffield City Council under Part P of the Building Regulations and will be certified by a registered electrician.",
+          "costs": [
+            {
+              "item": "Full rewire (2-bed Sheffield terrace)",
+              "range": "£2,875 – £4,025"
+            },
+            {
+              "item": "Full rewire (3-bed Sheffield terrace)",
+              "range": "£4,025 – £6,038"
+            },
+            {
+              "item": "Full rewire (4-bed Sheffield terrace)",
+              "range": "£5,750 – £8,050"
+            },
+            {
+              "item": "Consumer unit upgrade only",
+              "range": "£575 – £920"
+            },
+            {
+              "item": "Replastering after rewire (3-bed)",
+              "range": "£2,500 – £5,000"
+            }
+          ]
+        },
+        {
+          "heading": "Plastering Costs in Sheffield 2026",
+          "body": "Plastering costs in Sheffield are slightly above the national average, reflecting strong local demand from the city's large Victorian housing stock. A standard room skim in Sheffield costs £520–£750 depending on room size and condition of the existing substrate. Full house replastering, typically needed after a rewire or following the removal of old lath and plaster, costs £8,000–£16,000 for a 3-4 bedroom property. Sheffield plasterers are generally experienced with the lath-and-plaster construction found in Victorian terraces, though removing original lath-and-plaster and replacing with plasterboard and skim is a more involved job than re-skimming sound walls. In period properties it is worth considering whether to repair original lath-and-plaster rather than replace it, as this retains breathability in solid-walled buildings and avoids condensation risk. Sheffield's steep streets and older properties also mean that damp is common, a damp survey at £150–£300 is advisable before replastering any wall that shows staining or soft areas.",
+          "costs": [
+            {
+              "item": "Room skim (standard size)",
+              "range": "£520 – £750"
+            },
+            {
+              "item": "Full house replaster (3-bed)",
+              "range": "£8,000 – £16,000"
+            },
+            {
+              "item": "Lath-and-plaster removal + replaster (per room)",
+              "range": "£800 – £1,500"
+            },
+            {
+              "item": "Damp survey",
+              "range": "£150 – £300"
+            },
+            {
+              "item": "Dot and dab plasterboard (per m²)",
+              "range": "£18 – £35"
+            }
+          ]
+        },
+        {
+          "heading": "Finding Reliable Tradespeople in Sheffield",
+          "body": "Sheffield has a strong local trades market, with a good supply of builders, electricians, and plumbers serving the city's large owner-occupier market. The S10 and S11 postcode areas, covering Broomhill, Crookes, Sharrow, and Nether Edge, have the highest concentration of renovation activity and the most competitive trade market. For extensions and structural work, always use a builder registered with the Federation of Master Builders (FMB) or who carries a valid NHBC warranty for new build elements. Electricians must be registered with NICEIC, NAPIT, or an equivalent Part P competent person scheme. Gas engineers must hold a current Gas Safe registration, verifiable at gassaferegister.co.uk. Sheffield City Council's planning portal and building control service handles permit and inspection services for the city. For larger projects, a local project manager or quantity surveyor can manage contractor selection and cost control, fees typically run 5–10% of the project value.",
+          "costs": [
+            {
+              "item": "Project manager fee (% of project value)",
+              "range": "5% – 10%"
+            },
+            {
+              "item": "Quantity surveyor (cost plan)",
+              "range": "£500 – £1,500"
+            },
+            {
+              "item": "Building Regulations application (extension)",
+              "range": "£200 – £500"
+            },
+            {
+              "item": "Party wall surveyor (if required)",
+              "range": "£700 – £1,500"
+            },
+            {
+              "item": "Structural engineer report",
+              "range": "£400 – £900"
+            }
+          ]
+        }
+      ]
     },
     {
       "slug": "edinburgh",
       "name": "Edinburgh",
       "fullName": "Edinburgh",
       "multiplier": 1.15,
+      "titleVariant": "A",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Scotland's capital commands high rates due to New Town conservation requirements and strong demand in Stockbridge and Morningside. Listed building consents add complexity and cost to many projects. Contractors compete with commercial work from the financial sector, driving up day rates. Material transport from Glasgow and beyond adds logistics costs.",
       "population": "525,000",
-      "avgPropertyValue": "£320,000"
+      "avgPropertyValue": "£320,000",
+      "defaultPostcode": "EH1 1AA",
+      "localMetaTitle": "Edinburgh Renovation Costs 2026: From £7,500 for Bathrooms & Extensions | EstimateAI",
+      "localMetaDescription": "How much does renovation cost in Edinburgh in 2026? Bathrooms from £7,500, extensions from £71,000, rewires from £5,200. Building Warrants required for most structural work. Free postcode estimate.",
+      "localContent": [
+        {
+          "heading": "Building Warrants in Edinburgh: What They Cost and How Long They Take",
+          "body": "Every structural renovation in Edinburgh requires a Building Warrant from the City of Edinburgh Council before work can legally begin. This applies more broadly than England's Building Regulations: extensions, loft conversions, structural wall removals, drainage changes, and most conversions all require a warrant. The application fee runs from £100 for minor works up to £2,000 for larger extensions, based on project value. Processing typically takes 20–35 working days, though complex applications in Edinburgh's conservation areas can take longer if Historic Environment Scotland is consulted. Budget for this timeline from the outset: no reputable contractor will start structural work without the warrant in hand, and starting without one is a criminal offence in Scotland. For properties in the New Town, Stockbridge, Morningside, and other conservation areas, which cover a large proportion of Edinburgh's housing stock, a Listed Building Consent application may also be required for external alterations, adding a further 4–8 weeks. Contact the City of Edinburgh Council's Building Standards team early in your project planning.",
+          "costs": [
+            {
+              "item": "Building Warrant fee (minor works)",
+              "range": "£100 – £400"
+            },
+            {
+              "item": "Building Warrant fee (extension/conversion)",
+              "range": "£600 – £2,000"
+            },
+            {
+              "item": "Listed Building Consent application",
+              "range": "£0 (no fee, but agent costs £500–£1,500)"
+            },
+            {
+              "item": "Building Warrant via agent/architect",
+              "range": "£800 – £2,000"
+            },
+            {
+              "item": "Completion Certificate inspection",
+              "range": "£200 – £400"
+            }
+          ]
+        },
+        {
+          "heading": "Tenement and Period Property Renovation Costs in Edinburgh",
+          "body": "Edinburgh's housing stock is dominated by sandstone tenements, Georgian terraces, and Victorian villas, all of which carry renovation costs that differ significantly from modern builds. Tenement properties in Leith, Bruntsfield, and Marchmont share structural elements including the common stair, roof, and external walls, meaning major works often require agreement from all flat owners and may trigger a formal factor-managed repair. Edinburgh's New Town properties, largely B-listed or within a World Heritage Site boundary, face the most stringent controls on external alterations. Replacing windows, altering facades, or adding external pipework in these areas requires Listed Building Consent and must use approved materials, typically adding 15–25% to external works costs compared to unrestricted properties. Stone cleaning and repointing on a full tenement block in Edinburgh typically costs £15,000–£35,000 total, split across all owners. Internal refurbishment of a tenement flat, kitchen, bathroom, replastering, decoration, runs £40,000–£80,000 depending on specification and the condition of the existing services.",
+          "costs": [
+            {
+              "item": "Full tenement flat refurbishment",
+              "range": "£40,000 – £80,000"
+            },
+            {
+              "item": "Stone repointing (per flat share)",
+              "range": "£3,500 – £8,000"
+            },
+            {
+              "item": "Sash and case window replacement (per window)",
+              "range": "£800 – £1,800"
+            },
+            {
+              "item": "Structural engineer report",
+              "range": "£500 – £1,200"
+            },
+            {
+              "item": "Common stair redecoration (per flat share)",
+              "range": "£600 – £1,500"
+            }
+          ]
+        },
+        {
+          "heading": "Bathroom Renovation Costs in Edinburgh 2026",
+          "body": "A standard bathroom renovation in Edinburgh costs £7,500–£9,800 in 2026, reflecting the city's 1.15x regional multiplier. Edinburgh's competitive trade market, particularly for plumbers and tilers, means lead times for quality contractors can run 6–10 weeks. In tenement properties, the bathroom is often located in the centre of the flat with limited ventilation and tight access, which adds to labour time. Older Edinburgh properties frequently have cast iron or lead pipework that needs replacing before a new bathroom suite can be fitted to current standards; budget an additional £800–£2,500 for pipe replacement depending on the extent. Properties in conservation areas may require consent for new external soil pipe runs on the building facade, adding planning time. For period properties in the New Town and Stockbridge, traditional materials such as period-style sanitaryware and encaustic floor tiles are increasingly expected to maintain character, these cost 30–60% more than standard fittings.",
+          "costs": [
+            {
+              "item": "Standard bathroom renovation (Edinburgh)",
+              "range": "£7,500 – £9,800"
+            },
+            {
+              "item": "Wet room installation",
+              "range": "£9,500 – £14,500"
+            },
+            {
+              "item": "En-suite installation",
+              "range": "£4,800 – £7,800"
+            },
+            {
+              "item": "Pipework replacement (partial)",
+              "range": "£800 – £2,500"
+            },
+            {
+              "item": "Bathroom tiling (per m²)",
+              "range": "£45 – £85"
+            }
+          ]
+        },
+        {
+          "heading": "House Extension Costs in Edinburgh 2026",
+          "body": "Single-storey extensions in Edinburgh cost £71,300–£80,500 for a standard 20m² project in 2026, based on Edinburgh's 1.15x multiplier applied to the £2,700–£3,500/m² baseline. In Edinburgh's conservation areas, which include the Old Town, New Town, and many Victorian suburbs, permitted development rights are often restricted, meaning planning permission is required even for modest rear extensions. This adds 8–16 weeks and £1,500–£4,000 in planning fees and agent costs. Edinburgh's sandstone construction requires extensions to match the host material, which is more expensive than brick and must be sourced from approved quarries for listed buildings. Groundworks in Edinburgh can also be complicated by the city's volcanic geology, with rock excavation adding £3,000–£8,000 to foundation costs in some areas. A Building Warrant is required for all extensions regardless of size.",
+          "costs": [
+            {
+              "item": "Single-storey extension (20m², Edinburgh)",
+              "range": "£71,300 – £80,500"
+            },
+            {
+              "item": "Kitchen extension (20m²)",
+              "range": "£76,000 – £86,000"
+            },
+            {
+              "item": "Loft conversion (Edinburgh)",
+              "range": "£51,750 – £65,000"
+            },
+            {
+              "item": "Planning permission fee (extension)",
+              "range": "£300 – £600"
+            },
+            {
+              "item": "Rock excavation (if required)",
+              "range": "£3,000 – £8,000"
+            }
+          ]
+        },
+        {
+          "heading": "Finding Reliable Contractors in Edinburgh",
+          "body": "Edinburgh's buoyant property market and high volume of conservation-area work means reputable contractors are in strong demand. Lead times of 8–16 weeks for extensions and loft conversions are common for established firms. For works in conservation areas or listed buildings, always check that your contractor has specific experience with traditional materials and the Building Warrant process, not all contractors are familiar with Edinburgh City Council's requirements for historic properties. The Federation of Master Builders (FMB) maintains a vetted contractor directory filtered by location and trade. For listed building works, architects and surveyors registered with the Royal Incorporation of Architects in Scotland (RIAS) can manage the consent process on your behalf. Always obtain a minimum of three written quotes for any project over £5,000, and check that your contractor carries public liability insurance of at least £2 million.",
+          "costs": [
+            {
+              "item": "Architect fee (planning/warrant drawings)",
+              "range": "£1,500 – £5,000"
+            },
+            {
+              "item": "Structural engineer report",
+              "range": "£500 – £1,200"
+            },
+            {
+              "item": "Party wall agreement (if applicable)",
+              "range": "£700 – £1,500"
+            },
+            {
+              "item": "Surveyor (pre-purchase report)",
+              "range": "£400 – £900"
+            }
+          ]
+        }
+      ]
     },
     {
       "slug": "bristol",
       "name": "Bristol",
       "fullName": "Bristol",
       "multiplier": 1.15,
+      "titleVariant": "B",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Bristol's thriving tech sector and desirable Clifton and Redland areas create strong renovation demand. The city's hills and Victorian housing stock require specialist skills for complex projects. Proximity to the M4/M5 junction allows competitive material pricing, though skilled trades are in high demand across both residential and commercial sectors.",
       "population": "465,000",
-      "avgPropertyValue": "£380,000"
+      "avgPropertyValue": "£380,000",
+      "defaultPostcode": "BS1 1AA",
+      "localMetaTitle": "Bristol Renovation Costs 2026: Local Prices for Every Project | EstimateAI",
+      "localMetaDescription": "Bristol renovation costs run 15% above the UK average in 2026. Bathroom from £7,500, extension from £55,200. Period property work commands a local premium."
     },
     {
       "slug": "cardiff",
       "name": "Cardiff",
       "fullName": "Cardiff",
       "multiplier": 1.05,
+      "titleVariant": "A",
       "tier": "Tier 5 (Urban Mid)",
       "regionalInsights": "As Wales' capital, Cardiff maintains moderate premiums due to government and commercial activity in Cardiff Bay. Regeneration projects in areas like Grangetown create steady contractor demand. M4 corridor access supports material logistics from Bristol and beyond. Costs remain below major English cities while exceeding rural Welsh areas.",
       "population": "365,000",
-      "avgPropertyValue": "£255,000"
+      "avgPropertyValue": "£255,000",
+      "defaultPostcode": "CF10 1AA",
+      "localMetaTitle": "Cardiff Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Cardiff in 2026? Local prices run 5% above the UK average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Cardiff's local trade rates. Free instant estimate for your Cardiff postcode."
     },
     {
       "slug": "nottingham",
       "name": "Nottingham",
       "fullName": "Nottingham",
       "multiplier": 1.05,
+      "titleVariant": "A",
       "tier": "Tier 5 (Urban Mid)",
       "regionalInsights": "Nottingham's central Midlands location and strong university presence create steady renovation demand in areas like The Park and West Bridgford. M1 access provides competitive material costs, while the city's compact size enables efficient contractor scheduling. Costs slightly exceed baseline due to city centre parking restrictions and urban density.",
       "population": "330,000",
-      "avgPropertyValue": "£230,000"
+      "avgPropertyValue": "£230,000",
+      "defaultPostcode": "NG1 1AA",
+      "localMetaTitle": "Nottingham Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Nottingham in 2026? Local prices run 5% above the UK average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Nottingham's local trade rates. Free instant estimate for your Nottingham postcode."
     },
     {
       "slug": "leicester",
       "name": "Leicester",
       "fullName": "Leicester",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "B",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Leicester represents baseline UK pricing with excellent M1/M69 motorway access for materials. The city's diverse property mix from Victorian terraces to modern estates creates varied work opportunities. Local trade competition keeps rates competitive, while proximity to major distribution hubs maintains material cost efficiency.",
       "population": "355,000",
-      "avgPropertyValue": "£240,000"
+      "avgPropertyValue": "£240,000",
+      "defaultPostcode": "LE1 1AA",
+      "localMetaTitle": "Leicester Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Leicester in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Leicester's local trade rates. Free instant estimate for your Leicester postcode."
     },
     {
       "slug": "coventry",
       "name": "Coventry",
       "fullName": "Coventry",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "B",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Coventry's central Midlands position and strong motorway links (M6/M69/M45) create ideal material logistics. Ongoing regeneration and university expansion drive steady contractor demand. The mix of post-war reconstruction and modern development offers diverse project types at competitive baseline rates.",
       "population": "345,000",
-      "avgPropertyValue": "£235,000"
+      "avgPropertyValue": "£235,000",
+      "defaultPostcode": "CV1 1AA",
+      "localMetaTitle": "Coventry Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Coventry in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Coventry's local trade rates. Free instant estimate for your Coventry postcode."
     },
     {
       "slug": "newcastle",
       "name": "Newcastle",
       "fullName": "Newcastle",
       "multiplier": 1.05,
+      "titleVariant": "B",
       "tier": "Tier 5 (Urban Mid)",
       "regionalInsights": "Newcastle's North East hub status creates moderate urban premiums, particularly in Jesmond and Gosforth. The city's regeneration and Quayside development maintain contractor demand. A1(M) access supports material delivery though slight transport premiums apply from Midlands hubs. Costs exceed rural North East but remain below southern cities.",
       "population": "300,000",
-      "avgPropertyValue": "£210,000"
+      "avgPropertyValue": "£210,000",
+      "defaultPostcode": "NE1 1AA",
+      "localMetaTitle": "Newcastle Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Newcastle in 2026? Local prices run 5% above the UK average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Newcastle's local trade rates. Free instant estimate for your Newcastle postcode."
     },
     {
       "slug": "sunderland",
       "name": "Sunderland",
       "fullName": "Sunderland",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "A",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Sunderland's coastal location and A19 access create competitive baseline pricing. The city's terraced housing stock and recent Seaburn/Roker regeneration provide steady renovation work. Proximity to Newcastle contractors creates market competition, while local material suppliers from Team Valley keep costs efficient.",
       "population": "275,000",
-      "avgPropertyValue": "£175,000"
+      "avgPropertyValue": "£175,000",
+      "defaultPostcode": "SR1 1AA",
+      "localMetaTitle": "Sunderland Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Sunderland in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Sunderland's local trade rates. Free instant estimate for your Sunderland postcode."
     },
     {
       "slug": "portsmouth",
       "name": "Portsmouth",
       "fullName": "Portsmouth",
       "multiplier": 1.15,
+      "titleVariant": "B",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Portsmouth's island location creates unique logistics challenges with M27 access via mainland bridges. Naval heritage and waterfront properties in Southsea command premium renovation rates. South Coast demand and London proximity (90 minutes) drive costs above baseline. Marine environment requires specialist weatherproofing and corrosion resistance.",
       "population": "240,000",
-      "avgPropertyValue": "£285,000"
+      "avgPropertyValue": "£285,000",
+      "defaultPostcode": "PO1 1AA",
+      "localMetaTitle": "Portsmouth Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Portsmouth in 2026? Local prices run 15% above the UK average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Portsmouth's local trade rates. Free instant estimate for your Portsmouth postcode."
     },
     {
       "slug": "southampton",
       "name": "Southampton",
       "fullName": "Southampton",
       "multiplier": 1.15,
+      "titleVariant": "A",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Southampton's port city status and M27/M3 junction create strong commercial and residential demand. Ocean Village and Bedford Place areas command premium rates. Proximity to London and New Forest drives property values up. Material logistics benefit from port access and motorway networks, though skilled trades face competition from marine and commercial sectors.",
       "population": "250,000",
-      "avgPropertyValue": "£295,000"
+      "avgPropertyValue": "£295,000",
+      "defaultPostcode": "SO14 1AA",
+      "localMetaTitle": "Southampton Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Southampton in 2026? Local prices run 15% above the UK average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Southampton's local trade rates. Free instant estimate for your Southampton postcode."
     },
     {
       "slug": "brighton",
       "name": "Brighton & Hove",
       "fullName": "Brighton & Hove",
       "multiplier": 1.25,
+      "titleVariant": "A",
       "tier": "Tier 3 (South East)",
       "regionalInsights": "Brighton's coastal charm and London commuter appeal (60 minutes to Victoria) drive premium South East pricing. Hove's regency squares and Brighton's Victorian terraces require specialist period skills. A23 access supports material delivery despite challenging seafront access. High property values in areas like Kemp Town and Seven Dials sustain premium contractor rates.",
       "population": "290,000",
-      "avgPropertyValue": "£425,000"
+      "avgPropertyValue": "£425,000",
+      "defaultPostcode": "BN1 1AA",
+      "localMetaTitle": "Brighton Renovation Costs 2026: South East Premium Prices Explained | EstimateAI",
+      "localMetaDescription": "Brighton renovation costs run 25% above the UK average in 2026, driven by London commuter demand, Victorian and Regency period property skills, and South East contractor rates. Bathroom from £8,100, kitchen from £15,000. Free instant estimate for your Brighton postcode."
     },
     {
       "slug": "plymouth",
       "name": "Plymouth",
       "fullName": "Plymouth",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "A",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Plymouth's South West peninsula location creates baseline pricing despite city size. A38 Devon Expressway access supports material logistics from Exeter and Bristol hubs. Naval dockyard and waterfront properties drive steady renovation demand. Marine environment requires weatherproofing expertise, while local trade competition maintains competitive rates.",
       "population": "262,000",
-      "avgPropertyValue": "£245,000"
+      "avgPropertyValue": "£245,000",
+      "defaultPostcode": "PL1 1AA",
+      "localMetaTitle": "Plymouth Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Plymouth in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Plymouth's local trade rates. Free instant estimate for your Plymouth postcode."
     },
     {
       "slug": "derby",
       "name": "Derby",
       "fullName": "Derby",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "A",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Derby's central Midlands position with A38/A52/M1 access creates excellent material logistics at baseline prices. Manufacturing heritage and Rolls-Royce presence drive steady residential demand. Mix of Victorian terraces in areas like Darley Abbey and modern estates provides diverse contractor opportunities at competitive rates.",
       "population": "260,000",
-      "avgPropertyValue": "£220,000"
+      "avgPropertyValue": "£220,000",
+      "defaultPostcode": "DE1 1AA",
+      "localMetaTitle": "Derby Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Derby in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Derby's local trade rates. Free instant estimate for your Derby postcode."
     },
     {
       "slug": "stoke-on-trent",
       "name": "Stoke-on-Trent",
       "fullName": "Stoke-on-Trent",
       "multiplier": 0.95,
+      "titleVariant": "B",
       "tier": "Tier 7 (Below Baseline)",
       "regionalInsights": "Stoke-on-Trent's Potteries heritage and lower property values create below-baseline contractor rates. M6 access provides efficient material delivery from Midlands hubs. The six-town structure and terraced housing stock offer high-volume renovation opportunities. Lower living costs support competitive trade pricing throughout the area.",
       "population": "275,000",
-      "avgPropertyValue": "£165,000"
+      "avgPropertyValue": "£165,000",
+      "defaultPostcode": "ST1 1AA",
+      "localMetaTitle": "Stoke-on-Trent Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Stoke-on-Trent in 2026? Local prices run 5% below the UK average, making it one of the most affordable renovation markets in the UK. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Stoke-on-Trent's local trade rates. Free instant estimate for your Stoke-on-Trent postcode."
     },
     {
       "slug": "wolverhampton",
       "name": "Wolverhampton",
       "fullName": "Wolverhampton",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "B",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Wolverhampton's Black Country location with M5/M6/M54 access maintains baseline pricing. Proximity to Birmingham creates contractor spillover without premium rates. Industrial heritage and canal-side regeneration drive steady renovation work. Material costs benefit from excellent Midlands distribution network access.",
       "population": "265,000",
-      "avgPropertyValue": "£205,000"
+      "avgPropertyValue": "£205,000",
+      "defaultPostcode": "WV1 1AA",
+      "localMetaTitle": "Wolverhampton Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Wolverhampton in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Wolverhampton's local trade rates. Free instant estimate for your Wolverhampton postcode."
     },
     {
       "slug": "hull",
       "name": "Hull",
       "fullName": "Kingston upon Hull",
       "multiplier": 0.95,
+      "titleVariant": "A",
       "tier": "Tier 7 (Below Baseline)",
       "regionalInsights": "Hull's East Yorkshire location creates below-baseline rates despite port city status. A63 access supports material delivery though slight transport premiums from Midlands hubs. Recent City of Culture regeneration and Old Town restoration drive contractor demand. Lower property values and living costs maintain competitive trade pricing.",
       "population": "260,000",
-      "avgPropertyValue": "£170,000"
+      "avgPropertyValue": "£170,000",
+      "defaultPostcode": "HU1 1AA",
+      "localMetaTitle": "Hull Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Hull in 2026? Local prices run 5% below the UK average, making it one of the most affordable renovation markets in the UK. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Hull's local trade rates. Free instant estimate for your Hull postcode."
     },
     {
       "slug": "reading",
       "name": "Reading",
       "fullName": "Reading",
       "multiplier": 1.25,
+      "titleVariant": "A",
       "tier": "Tier 3 (South East)",
       "regionalInsights": "Reading's Thames Valley position and 25-minute train to Paddington drive South East premium pricing. M4 corridor tech sector and Berkshire wealth create strong renovation demand. Areas like Caversham and Tilehurst command quality contractor rates. Material logistics benefit from M4/M3 access, though costs reflect proximity to London market.",
       "population": "175,000",
-      "avgPropertyValue": "£395,000"
+      "avgPropertyValue": "£395,000",
+      "defaultPostcode": "RG1 1AA",
+      "localMetaTitle": "Reading Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Reading in 2026? Local prices run 25% above the UK average, reflecting South East contractor rates and high local property values. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Reading's local trade rates. Free instant estimate for your Reading postcode."
     },
     {
       "slug": "preston",
       "name": "Preston",
       "fullName": "Preston",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "B",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Preston's Lancashire hub status with M6/M55/M61 access maintains baseline rates. Mix of Victorian terraces in Fulwood and modern estates provides varied contractor work. Proximity to Manchester and Blackpool creates market competition without premium pricing. Material logistics benefit from North West distribution networks.",
       "population": "145,000",
-      "avgPropertyValue": "£190,000"
+      "avgPropertyValue": "£190,000",
+      "defaultPostcode": "PR1 1AA",
+      "localMetaTitle": "Preston Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Preston in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Preston's local trade rates. Free instant estimate for your Preston postcode."
     },
     {
       "slug": "middlesbrough",
       "name": "Middlesbrough",
       "fullName": "Middlesbrough",
       "multiplier": 0.95,
+      "titleVariant": "A",
       "tier": "Tier 7 (Below Baseline)",
       "regionalInsights": "Middlesbrough's Teesside location creates below-baseline pricing despite industrial heritage. A19/A66 access supports material delivery with transport premiums from Midlands hubs. Regeneration projects and Victorian terraced housing drive steady contractor work. Lower property values and living costs maintain competitive trade rates.",
       "population": "140,000",
-      "avgPropertyValue": "£155,000"
+      "avgPropertyValue": "£155,000",
+      "defaultPostcode": "TS1 1AA",
+      "localMetaTitle": "Middlesbrough Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Middlesbrough in 2026? Local prices run 5% below the UK average, making it one of the most affordable renovation markets in the UK. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Middlesbrough's local trade rates. Free instant estimate for your Middlesbrough postcode."
     },
     {
       "slug": "swansea",
       "name": "Swansea",
       "fullName": "Swansea",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "A",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Swansea's South Wales coastal location maintains baseline rates despite second-city status. M4 access supports material logistics from Cardiff and Bristol. Waterfront regeneration in Maritime Quarter and Mumbles properties drive renovation demand. Lower costs than Cardiff while exceeding rural Welsh areas.",
       "population": "245,000",
-      "avgPropertyValue": "£215,000"
+      "avgPropertyValue": "£215,000",
+      "defaultPostcode": "SA1 1AA",
+      "localMetaTitle": "Swansea Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Swansea in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Swansea's local trade rates. Free instant estimate for your Swansea postcode."
     },
     {
       "slug": "newport",
       "name": "Newport",
       "fullName": "Newport",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "A",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Newport's M4 corridor position between Cardiff and Bristol creates baseline pricing with excellent material logistics. Recent regeneration around Friars Walk and riverfront drives contractor demand. Proximity to Cardiff and Severn crossing provides market competition. Industrial heritage and modern development offer diverse project types.",
       "population": "155,000",
-      "avgPropertyValue": "£225,000"
+      "avgPropertyValue": "£225,000",
+      "defaultPostcode": "NP20 1AA",
+      "localMetaTitle": "Newport Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Newport in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Newport's local trade rates. Free instant estimate for your Newport postcode."
     },
     {
       "slug": "luton",
       "name": "Luton",
       "fullName": "Luton",
       "multiplier": 1.15,
+      "titleVariant": "B",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Luton's proximity to London (30 minutes to St Pancras) and M1/M25 access drives above-baseline costs. Airport employment and rapid development in areas like Limbury create contractor demand. Material logistics benefit from motorway networks, though costs reflect South East pressure. Competition with Hertfordshire and Bedfordshire markets maintains elevated rates.",
       "population": "215,000",
-      "avgPropertyValue": "£310,000"
+      "avgPropertyValue": "£310,000",
+      "defaultPostcode": "LU1 1AA",
+      "localMetaTitle": "Luton Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Luton in 2026? Local prices run 15% above the UK average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Luton's local trade rates. Free instant estimate for your Luton postcode."
     },
     {
       "slug": "exeter",
       "name": "Exeter",
       "fullName": "Exeter",
       "multiplier": 1.05,
+      "titleVariant": "B",
       "tier": "Tier 5 (Urban Mid)",
       "regionalInsights": "Exeter's Devon capital status and M5 access create moderate urban premiums. University presence and cathedral city heritage drive renovation demand in areas like St Leonards and Pennsylvania. Material logistics benefit from M5 corridor despite South West location. Costs exceed rural Devon while remaining below major city levels.",
       "population": "130,000",
-      "avgPropertyValue": "£305,000"
+      "avgPropertyValue": "£305,000",
+      "defaultPostcode": "EX1 1AA",
+      "localMetaTitle": "Exeter Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Exeter in 2026? Local prices run 5% above the UK average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Exeter's local trade rates. Free instant estimate for your Exeter postcode."
     },
     {
       "slug": "cheltenham",
       "name": "Cheltenham",
       "fullName": "Cheltenham",
       "multiplier": 1.15,
+      "titleVariant": "A",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Cheltenham's Regency heritage and Cotswolds proximity drive premium rates. Period properties in Montpellier and Pittville require specialist conservation skills. M5 access supports material logistics, while affluent demographics and strict planning controls sustain premium contractor pricing. Competition with Gloucester market maintains elevated standards.",
       "population": "115,000",
-      "avgPropertyValue": "£370,000"
+      "avgPropertyValue": "£370,000",
+      "defaultPostcode": "GL50 1AA",
+      "localMetaTitle": "Cheltenham Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Cheltenham in 2026? Local prices run 15% above the UK average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Cheltenham's local trade rates. Free instant estimate for your Cheltenham postcode."
     },
     {
       "slug": "bournemouth",
       "name": "Bournemouth",
       "fullName": "Bournemouth",
       "multiplier": 1.15,
+      "titleVariant": "B",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Bournemouth's coastal appeal and retirement/commuter demographics drive above-baseline costs. A338 access to M27 supports material delivery, though coastal location creates slight premiums. Clifftop properties in areas like Westbourne and Southbourne require specialist skills. Marine environment demands weatherproofing expertise at premium rates.",
       "population": "200,000",
-      "avgPropertyValue": "£345,000"
+      "avgPropertyValue": "£345,000",
+      "defaultPostcode": "BH1 1AA",
+      "localMetaTitle": "Bournemouth Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Bournemouth in 2026? Local prices run 15% above the UK average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Bournemouth's local trade rates. Free instant estimate for your Bournemouth postcode."
     },
     {
       "slug": "swindon",
       "name": "Swindon",
       "fullName": "Swindon",
       "multiplier": 1.05,
+      "titleVariant": "B",
       "tier": "Tier 5 (Urban Mid)",
       "regionalInsights": "Swindon's M4 corridor position between London and Bristol creates moderate premiums. Rapid expansion and new-build finishing work drive contractor demand. Material logistics benefit from A419/M4/M5 access. Proximity to Cotswolds and London commuters elevates costs above baseline while remaining below premium South East levels.",
       "population": "185,000",
-      "avgPropertyValue": "£275,000"
+      "avgPropertyValue": "£275,000",
+      "defaultPostcode": "SN1 1AA",
+      "localMetaTitle": "Swindon Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Swindon in 2026? Local prices run 5% above the UK average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Swindon's local trade rates. Free instant estimate for your Swindon postcode."
     },
     {
       "slug": "dundee",
       "name": "Dundee",
       "fullName": "Dundee",
       "multiplier": 1.05,
+      "titleVariant": "B",
       "tier": "Tier 5 (Urban Mid)",
       "regionalInsights": "Dundee's east Scotland location creates moderate material transport costs from central belt. Scottish building regulations apply throughout. The city's waterfront regeneration and university expansion drive renovation demand. Skilled trades operate at mid-tier rates without the premium pressure of Edinburgh or Aberdeen. A90 corridor supports logistics from Perth and Angus suppliers.",
       "population": "150,000",
-      "avgPropertyValue": "£165,000"
+      "avgPropertyValue": "£165,000",
+      "defaultPostcode": "DD1 1AA",
+      "localMetaTitle": "Dundee Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Dundee in 2026? Local prices run 5% above the UK average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Dundee's local trade rates. Free instant estimate for your Dundee postcode."
     },
     {
       "slug": "blackpool",
       "name": "Blackpool",
       "fullName": "Blackpool",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "B",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Blackpool's coastal location and tourism economy support baseline contractor rates. Victorian guest house conversions and seafront properties drive renovation activity. M55 motorway access provides material logistics from North West hubs. Marine environment requires specific weatherproofing and corrosion resistance. Seasonal tourism creates variable demand patterns for trades throughout the year.",
       "population": "140,000",
-      "avgPropertyValue": "£165,000"
+      "avgPropertyValue": "£165,000",
+      "defaultPostcode": "FY1 1AA",
+      "localMetaTitle": "Blackpool Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Blackpool in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Blackpool's local trade rates. Free instant estimate for your Blackpool postcode."
     },
     {
       "slug": "peterborough",
       "name": "Peterborough",
       "fullName": "Peterborough",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "B",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Peterborough's A1(M) East Coast mainline position provides excellent material logistics. The city's rapid growth creates consistent new-build finishing and renovation demand. Proximity to Cambridge (30 miles) creates moderate cost pressure from spillover demand. Mix of Victorian city centre and modern estates supports diverse contractor work at competitive mid-tier rates.",
       "population": "200,000",
-      "avgPropertyValue": "£245,000"
+      "avgPropertyValue": "£245,000",
+      "defaultPostcode": "PE1 1AA",
+      "localMetaTitle": "Peterborough Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Peterborough in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Peterborough's local trade rates. Free instant estimate for your Peterborough postcode."
     },
     {
       "slug": "oxford",
       "name": "Oxford",
       "fullName": "Oxford",
       "multiplier": 1.25,
+      "titleVariant": "A",
       "tier": "Tier 3 (South East)",
       "regionalInsights": "Oxford's university heritage and South East wealth create premium pricing. Conservation areas in Jericho and North Oxford require specialist period property expertise. London commuter demand (60 min to Paddington) elevates property values. M40 corridor supports material logistics. College and commercial work competes for skilled trades, maintaining high day rates year-round.",
       "population": "155,000",
-      "avgPropertyValue": "£480,000"
+      "avgPropertyValue": "£480,000",
+      "defaultPostcode": "OX1 1AA",
+      "localMetaTitle": "Oxford Renovation Costs 2026: Local Prices & Period Property Guide | EstimateAI",
+      "localMetaDescription": "Oxford renovation costs run 25% above the UK average in 2026. Average property values of £480,000 and high demand for specialist period property skills drive premium rates. Bathroom from £8,100, kitchen from £15,000. Free instant estimate for your Oxford postcode."
     },
     {
       "slug": "slough",
       "name": "Slough",
       "fullName": "Slough",
       "multiplier": 1.25,
+      "titleVariant": "B",
       "tier": "Tier 3 (South East)",
       "regionalInsights": "Slough's proximity to Heathrow and London (20 miles) drives South East pricing despite the town's commercial focus. M4/M25 access provides excellent material logistics but also creates congestion. Contractors charge rates reflecting Berkshire and West London competition. Growing residential development and business park conversions create steady demand for trades.",
       "population": "150,000",
-      "avgPropertyValue": "£360,000"
+      "avgPropertyValue": "£360,000",
+      "defaultPostcode": "SL1 1AA",
+      "localMetaTitle": "Slough Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Slough in 2026? Local prices run 25% above the UK average, reflecting South East contractor rates and high local property values. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Slough's local trade rates. Free instant estimate for your Slough postcode."
     },
     {
       "slug": "york",
       "name": "York",
       "fullName": "York",
       "multiplier": 1.05,
+      "titleVariant": "A",
       "tier": "Tier 5 (Urban Mid)",
       "regionalInsights": "York's historic city status creates unique dynamics with extensive conservation areas requiring specialist expertise. Medieval and Georgian properties demand period-appropriate skills and materials. A64/A1(M) access supports logistics, while tourism and heritage sectors maintain steady contractor demand. Skilled trades command moderate premiums for conservation work, though not reaching major city levels.",
       "population": "210,000",
-      "avgPropertyValue": "£290,000"
+      "avgPropertyValue": "£290,000",
+      "defaultPostcode": "YO1 1AA",
+      "localMetaTitle": "York Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in York in 2026? Local prices run 5% above the UK average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for York's local trade rates. Free instant estimate for your York postcode."
     },
     {
       "slug": "cambridge",
       "name": "Cambridge",
       "fullName": "Cambridge",
       "multiplier": 1.25,
+      "titleVariant": "A",
       "tier": "Tier 3 (South East)",
       "regionalInsights": "Cambridge's university prestige and Silicon Fen tech wealth create premium market dynamics. Conservation areas around colleges demand specialist heritage skills. London commuter demand (50 min to King's Cross) drives high property values in Newnham and Trumpington. M11 corridor supports excellent material logistics. College and commercial sectors compete heavily for skilled trades, maintaining premium rates.",
       "population": "145,000",
-      "avgPropertyValue": "£525,000"
+      "avgPropertyValue": "£525,000",
+      "defaultPostcode": "CB1 1AA",
+      "localMetaTitle": "Cambridge Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does renovation cost in Cambridge in 2026? Costs run 25% above the UK average, average property values of £525,000 make it one of the most expensive markets outside London. Bathroom from £8,100, kitchen from £15,000. Free instant estimate for your Cambridge postcode."
     },
     {
       "slug": "ipswich",
       "name": "Ipswich",
       "fullName": "Ipswich",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "B",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Ipswich's East Anglian location maintains baseline pricing with A12/A14 access for materials from Eastern region hubs. The town's Victorian and Edwardian terraces provide straightforward renovation projects. Waterfront regeneration drives new development work. Local trades operate at competitive baseline rates, with limited pressure from Cambridge and Norwich markets.",
       "population": "135,000",
-      "avgPropertyValue": "£250,000"
+      "avgPropertyValue": "£250,000",
+      "defaultPostcode": "IP1 1AA",
+      "localMetaTitle": "Ipswich Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Ipswich in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Ipswich's local trade rates. Free instant estimate for your Ipswich postcode."
     },
     {
       "slug": "birkenhead",
       "name": "Birkenhead",
       "fullName": "Birkenhead",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "B",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Birkenhead's Wirral location across from Liverpool maintains baseline rates despite proximity to the city. Victorian terraces and waterfront areas provide steady renovation work. Mersey tunnels can add travel time but contractors serve both Wirral and Liverpool markets. M53 access supports material delivery from North West hubs. Competitive baseline pricing reflects regional market dynamics.",
       "population": "145,000",
-      "avgPropertyValue": "£175,000"
+      "avgPropertyValue": "£175,000",
+      "defaultPostcode": "CH41 1AA",
+      "localMetaTitle": "Birkenhead Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Birkenhead in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Birkenhead's local trade rates. Free instant estimate for your Birkenhead postcode."
     },
     {
       "slug": "telford",
       "name": "Telford",
       "fullName": "Telford",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "B",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Telford's 1960s new town status means predominantly modern housing with minimal period property complexity. M54 junction access provides excellent material logistics from Midlands distributors. The town's planned layout enables efficient contractor scheduling. Baseline rates reflect competitive Shropshire market, with proximity to Birmingham and Wolverhampton creating limited cost pressure.",
       "population": "175,000",
-      "avgPropertyValue": "£215,000"
+      "avgPropertyValue": "£215,000",
+      "defaultPostcode": "TF1 1AA",
+      "localMetaTitle": "Telford Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Telford in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Telford's local trade rates. Free instant estimate for your Telford postcode."
     },
     {
       "slug": "gloucester",
       "name": "Gloucester",
       "fullName": "Gloucester",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "A",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Gloucester's M5 corridor position supports cost-effective material delivery from South West and Midlands hubs. The city's docks regeneration and cathedral quarter create varied renovation projects. Victorian terraces and modern estates provide steady contractor work. Baseline rates apply despite proximity to Bristol and Cheltenham, with competitive local trades market.",
       "population": "130,000",
-      "avgPropertyValue": "£255,000"
+      "avgPropertyValue": "£255,000",
+      "defaultPostcode": "GL1 1AA",
+      "localMetaTitle": "Gloucester Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Gloucester in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Gloucester's local trade rates. Free instant estimate for your Gloucester postcode."
     },
     {
       "slug": "watford",
       "name": "Watford",
       "fullName": "Watford",
       "multiplier": 1.25,
+      "titleVariant": "A",
       "tier": "Tier 3 (South East)",
       "regionalInsights": "Watford's Metropolitan Line connection to London (20 minutes to Baker Street) drives South East premium pricing. M1/M25 access creates excellent material logistics but also attracts London contractor rates. The town's Victorian and Edwardian areas in Nascot Wood require period skills. Competition with North London and Hertfordshire markets maintains elevated day rates.",
       "population": "100,000",
-      "avgPropertyValue": "£425,000"
+      "avgPropertyValue": "£425,000",
+      "defaultPostcode": "WD17 1AA",
+      "localMetaTitle": "Watford Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Watford in 2026? Local prices run 25% above the UK average, reflecting South East contractor rates and high local property values. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Watford's local trade rates. Free instant estimate for your Watford postcode."
     },
     {
       "slug": "colchester",
       "name": "Colchester",
       "fullName": "Colchester",
-      "multiplier": 1.0,
+      "multiplier": 1,
+      "titleVariant": "A",
       "tier": "Tier 6 (Baseline)",
       "regionalInsights": "Colchester's Essex location maintains baseline pricing with A12 access to London and Ipswich. Roman heritage and garrison town status create diverse property types from Georgian terraces to modern developments. University expansion drives student accommodation renovations. Local trades operate at baseline rates, though some London influence exists in commuter villages.",
       "population": "120,000",
-      "avgPropertyValue": "£290,000"
+      "avgPropertyValue": "£290,000",
+      "defaultPostcode": "CO1 1AA",
+      "localMetaTitle": "Colchester Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Colchester in 2026? Local prices run at the UK national average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Colchester's local trade rates. Free instant estimate for your Colchester postcode."
     },
     {
       "slug": "bath",
       "name": "Bath",
       "fullName": "Bath",
       "multiplier": 1.25,
+      "titleVariant": "A",
       "tier": "Tier 3 (South East)",
       "regionalInsights": "Bath's UNESCO World Heritage status creates unique premium dynamics. Georgian architecture throughout the city requires specialist conservation skills and Bath stone expertise. Strict planning controls and listed building consents add complexity and cost. M4 corridor access supports logistics. High property values and wealthy homeowner base drive premium contractor rates, with period-appropriate craftsmanship commanding top prices.",
       "population": "95,000",
-      "avgPropertyValue": "£450,000"
+      "avgPropertyValue": "£450,000",
+      "defaultPostcode": "BA1 1AA",
+      "localMetaTitle": "Bath Renovation Costs 2026: Georgian & Listed Property Price Guide | EstimateAI",
+      "localMetaDescription": "Bath renovation costs run 25% above the UK average in 2026. UNESCO World Heritage status means strict planning controls, listed building consents, and specialist Bath stone expertise add significant cost. Bathroom from £8,100, kitchen from £15,000. Free instant estimate for your Bath postcode."
     },
     {
       "slug": "milton-keynes",
       "name": "Milton Keynes",
       "fullName": "Milton Keynes",
       "multiplier": 1.15,
+      "titleVariant": "B",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Milton Keynes' M1 corridor position between London and Birmingham drives above-baseline rates. The new town's grid system enables efficient contractor logistics, while rapid expansion creates consistent demand. Proximity to London (35 minutes to Euston) influences property values. Material delivery benefits from excellent motorway access via M1/A5.",
       "population": "230,000",
-      "avgPropertyValue": "£340,000"
+      "avgPropertyValue": "£340,000",
+      "defaultPostcode": "MK9 1AA",
+      "localMetaTitle": "Milton Keynes Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Milton Keynes in 2026? Local prices run 15% above the UK average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Milton Keynes's local trade rates. Free instant estimate for your Milton Keynes postcode."
     },
     {
       "slug": "aberdeen",
       "name": "Aberdeen",
       "fullName": "Aberdeen",
       "multiplier": 1.15,
+      "titleVariant": "B",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Aberdeen's North Sea oil heritage creates elevated costs despite recent industry downturn. Specialist granite property skills command premium rates. Scottish building regulations and isolated location create material transport premiums. Skilled trades maintain high day rates due to commercial sector competition. A90 corridor supports logistics from central Scotland.",
       "population": "200,000",
-      "avgPropertyValue": "£195,000"
+      "avgPropertyValue": "£195,000",
+      "localMetaTitle": "2026 Home Renovation Costs in Aberdeen | Granite Property Estimates",
+      "localMetaDescription": "Aberdeen renovation costs 2026: granite property maintenance, hard-water plumbing considerations, and Scottish building regulations explained. Get instant local estimates by postcode.",
+      "localContent": [
+        {
+          "heading": "Granite Property Maintenance in Aberdeen",
+          "body": "Aberdeen's iconic granite architecture, which gives the city its nickname 'The Granite City', creates unique renovation challenges and costs. Granite is exceptionally hard and dense, requiring specialist diamond-tipped cutting tools and experienced tradespeople who understand the material. Repointing granite joints costs £40–£65 per m² in Aberdeen, compared to £20–£35 for standard brick repointing elsewhere in the UK. Granite cleaning and restoration for a typical semi-detached property runs £1,500–£3,500 depending on the method: pressure washing, chemical treatment, or traditional wet grinding. When matching granite for repairs or extensions, sourcing authentic Aberdeenshire granite adds a £200–£500 premium over standard stone. Always use a contractor with specific granite experience, standard bricklayers are not equipped for this work.",
+          "costs": [
+            {
+              "item": "Granite repointing (per m²)",
+              "range": "£40 – £65"
+            },
+            {
+              "item": "Granite cleaning, semi-detached property",
+              "range": "£1,500 – £3,500"
+            },
+            {
+              "item": "Granite repair/matching stone premium",
+              "range": "£200 – £500"
+            },
+            {
+              "item": "Specialist granite mason (day rate)",
+              "range": "£350 – £550"
+            }
+          ]
+        },
+        {
+          "heading": "Hard-Water Plumbing Considerations in Aberdeen",
+          "body": "Aberdeen sits in a hard-water zone (250–300 ppm calcium carbonate), which significantly affects plumbing longevity and maintenance costs. Scale build-up in boilers, pipes, and hot water cylinders is accelerated compared to Scottish central belt cities like Glasgow or Edinburgh. Aberdeen plumbers typically recommend, and increasingly install as standard, inline water softeners or scale inhibitors on new boiler installations. Budget an additional £300–£800 for a fitted water softener. Descaling an existing boiler system costs £150–£350 in Aberdeen, and without scale protection, heat exchangers typically require replacement 30–40% sooner than in softer-water areas. When budgeting for any Aberdeen plumbing project, factor in the hard-water premium on both parts longevity and ongoing maintenance.",
+          "costs": [
+            {
+              "item": "Inline water softener (fitted)",
+              "range": "£300 – £800"
+            },
+            {
+              "item": "Boiler system descale",
+              "range": "£150 – £350"
+            },
+            {
+              "item": "Scale inhibitor installation",
+              "range": "£120 – £250"
+            },
+            {
+              "item": "Hard-water pipe lagging upgrade",
+              "range": "£200 – £450"
+            }
+          ]
+        }
+      ],
+      "defaultPostcode": "AB10 1AA"
     },
     {
       "slug": "norwich",
       "name": "Norwich",
       "fullName": "Norwich",
       "multiplier": 1.05,
+      "titleVariant": "A",
       "tier": "Tier 5 (Urban Mid)",
       "regionalInsights": "Norwich's Norfolk capital status and historic centre create moderate premiums. Cathedral quarter and Georgian properties require period skills. A11/A47 access supports material logistics despite East Anglian location. University and commercial sectors drive steady renovation demand. Costs exceed rural Norfolk while remaining below major city levels.",
       "population": "215,000",
-      "avgPropertyValue": "£265,000"
+      "avgPropertyValue": "£265,000",
+      "defaultPostcode": "NR1 1AA",
+      "localMetaTitle": "Norwich Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Norwich in 2026? Local prices run 5% above the UK average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Norwich's local trade rates. Free instant estimate for your Norwich postcode."
     },
     {
       "slug": "canterbury",
       "name": "Canterbury",
       "fullName": "Canterbury",
       "multiplier": 1.15,
+      "titleVariant": "A",
       "tier": "Tier 4 (Urban Major)",
       "regionalInsights": "Canterbury's UNESCO World Heritage status and cathedral city heritage drive premium rates. Extensive conservation areas require specialist medieval and Tudor expertise. London commuter demand (55 min to St Pancras) elevates property values. A2/M2 access supports material delivery. Listed building work and tourism sector maintain elevated contractor pricing.",
       "population": "55,000",
-      "avgPropertyValue": "£385,000"
+      "avgPropertyValue": "£385,000",
+      "defaultPostcode": "CT1 1AA",
+      "localMetaTitle": "Canterbury Renovation Costs 2026: Local Prices for Extensions, Rewires & More | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Canterbury in 2026? Local prices run 15% above the UK average. Covers bathroom renovations, kitchen refits, house extensions, full rewires and more, with costs adjusted for Canterbury's local trade rates. Free instant estimate for your Canterbury postcode."
+    },
+    {
+      "slug": "belfast",
+      "name": "Belfast",
+      "fullName": "Belfast",
+      "multiplier": 1.0,
+      "titleVariant": "A",
+      "tier": "Tier 6 (Baseline)",
+      "regionalInsights": "Northern Ireland's capital sits at the UK baseline for renovation costs, with trade day rates tracking GB medians closely despite lower regional median earnings. Strong demand in south Belfast suburbs such as Stranmillis and Malone drives competitive contractor pricing. Terrace and Victorian semi-detached housing dominates the private stock, creating steady demand for replastering, rewiring and bathroom refits. Cross-border material supply from the Republic of Ireland can affect pricing on some materials, particularly timber and groundworks.",
+      "population": "345,000",
+      "avgPropertyValue": "£185,000",
+      "defaultPostcode": "BT1 1AA",
+      "localMetaTitle": "Belfast Renovation Costs 2026: Local Prices for Extensions, Rewires & Bathrooms | EstimateAI",
+      "localMetaDescription": "How much does home renovation cost in Belfast in 2026? Costs track the UK baseline. Covers bathroom renovations, extensions, rewires and more, adjusted for Belfast trade rates. Free instant estimate for your BT postcode.",
+      "localContent": [
+        {
+          "heading": "Planning Permission in Northern Ireland: Key Differences from GB",
+          "body": "Homeowners in Belfast operate under a distinct planning framework from the rest of the UK. Planning applications in Northern Ireland are determined by the Belfast City Council planning department under the Planning Act (Northern Ireland) 2011, rather than the Town and Country Planning Act that governs England and Wales. Permitted development rights in Northern Ireland broadly mirror those in England, but the thresholds and conditions differ in some areas, so always verify with Belfast City Council before starting structural work. Appeals against planning decisions in Northern Ireland go to the Planning Appeals Commission (PAC) rather than the Planning Inspectorate. Building Regulations approval is required for most structural alterations, extensions, and conversions, and is administered separately from planning permission. For extensions to terrace properties, which are common in areas such as east Belfast and the Markets, party wall considerations apply, though Northern Ireland does not have a Party Wall Act equivalent and disputes are handled through common law. A building regulations application in Belfast typically costs £160–£900 depending on project scope and is processed by the Building Control section of Belfast City Council.",
+          "costs": [
+            {
+              "item": "Building Regulations application (minor works)",
+              "range": "£160 – £400"
+            },
+            {
+              "item": "Building Regulations application (extension)",
+              "range": "£400 – £900"
+            },
+            {
+              "item": "Planning application fee (householder)",
+              "range": "£234"
+            },
+            {
+              "item": "Structural engineer report",
+              "range": "£400 – £1,000"
+            }
+          ]
+        },
+        {
+          "heading": "Terrace and Victorian Housing Renovation Costs in Belfast",
+          "body": "Belfast's private housing stock is dominated by Victorian and Edwardian terrace properties, particularly in areas such as the Holylands, Ormeau Road, Stranmillis, and east Belfast. These properties share common renovation challenges: solid brick external walls with no cavity (which rules out standard cavity wall insulation and affects heat loss calculations), original timber joisted floors, and frequently outdated electrical installations that predate modern consumer unit standards. A full renovation of a Belfast two-up two-down terrace, covering rewire, replastering, new bathroom, kitchen refit, and decoration, typically costs £30,000–£60,000 depending on specification and condition. Replastering is a particularly common requirement in older terrace stock where original lime plaster has failed or where damp penetration through solid walls has compromised the finish. Belfast has a relatively high incidence of pyrite-affected concrete in some areas, which can cause floor slab heave in properties built in the 1950s–1980s. If your property was built in this period and you notice floor cracking or uneven levels, commission a pyrite assessment before planning any floor renovation work.",
+          "costs": [
+            {
+              "item": "Full terrace renovation (2-bed, Belfast)",
+              "range": "£30,000 – £60,000"
+            },
+            {
+              "item": "Solid wall internal insulation (per m²)",
+              "range": "£70 – £120"
+            },
+            {
+              "item": "Full house replaster (3-bed terrace)",
+              "range": "£4,000 – £6,500"
+            },
+            {
+              "item": "Pyrite assessment",
+              "range": "£300 – £800"
+            },
+            {
+              "item": "Consumer unit replacement",
+              "range": "£400 – £700"
+            }
+          ]
+        },
+        {
+          "heading": "Bathroom Renovation Costs in Belfast 2026",
+          "body": "A standard bathroom renovation in Belfast costs £6,200–£8,500 in 2026, tracking the UK baseline given Belfast's 1.0x multiplier. Belfast sits in a soft water area, which reduces limescale-related plumbing issues compared to south-east England but means boiler and heating system maintenance requirements are slightly different. Bathroom fitters in Belfast are generally competitive on day rates compared to GB cities, with lead times of 2–4 weeks for quality trades being typical across the BT postcode area. For properties in conservation areas, including parts of south Belfast covered by area of outstanding natural beauty designations in the surrounding hills, any external alterations (such as adding a bathroom window or soil pipe to a rear elevation) may require planning permission. Internal bathroom renovations in most residential properties do not require planning permission. A standard bathroom renovation in Belfast covering new suite, tiling, plumbing, and decoration typically takes 5–8 days.",
+          "costs": [
+            {
+              "item": "Standard bathroom renovation (Belfast)",
+              "range": "£6,200 – £8,500"
+            },
+            {
+              "item": "Wet room installation",
+              "range": "£8,500 – £13,000"
+            },
+            {
+              "item": "En-suite installation",
+              "range": "£4,000 – £7,000"
+            },
+            {
+              "item": "Bathroom tiling only (per m²)",
+              "range": "£40 – £75"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

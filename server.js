@@ -1690,6 +1690,8 @@ app.get('/api/admin/indexing-status', async (req, res) => {
 const Annotation = require('./models/Annotation');
 const costIndexRoutes = require('./routes/costIndexRoutes');
 app.use('/api/cost-index', costIndexRoutes);
+const demandStatsRoutes = require('./routes/demandStatsRoutes');
+app.use('/api/demand-stats', demandStatsRoutes);
 
 // POST — log a new intervention
 app.post('/api/admin/annotations', async (req, res) => {

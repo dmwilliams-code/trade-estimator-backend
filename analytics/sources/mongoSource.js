@@ -182,6 +182,7 @@ async function getChangeLog({ since }) {
 
 module.exports = {
   TEST_DISTRICTS,
+  estimateTestExclusion,
   getEstimatesByVariant,
   getLeadsByVariant,
   getContractorSignalLadder,
