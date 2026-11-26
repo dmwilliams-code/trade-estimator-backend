@@ -145,6 +145,14 @@ const estimateSchema = new mongoose.Schema({
     default: null
   },
 
+  // Quote ownership test (QuoteOwnershipTestSpec.md): whether the homeowner already
+  // holds a contractor quote. Optional, set once. Null means not answered.
+  quoteStatus: {
+    type: String,
+    enum: ['none', 'one', 'multiple', null],
+    default: null
+  },
+
   // Sharing & engagement tracking
   sharedAt: {
     type: Date,

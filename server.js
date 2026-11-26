@@ -1246,7 +1246,19 @@ app.post('/api/save-estimate', async (req, res) => {
 app.patch('/api/save-estimate/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { estimate, photoAnalysis, multipliers, quality, userLocation, locationData } = req.body;
+    const { estimate, photoAnalysis, multipliers, quality, userLocation, locationData, quoteStatus } = req.body;
+
+    // Quote ownership test: a quoteStatus-only PATCH records the answer and nothing
+    // else. Set once, so a repeat tap or replay cannot overwrite the first answer.
+    if (quoteStatus !== undefined && !estimate) {
+      if (!/^[a-f0-9]{24}$/i.test(id || '') || !['none', 'one', 'multiple'].includes(quoteStatus)) {
+        return res.status(400).json({ error: 'Invalid quote status' });
+      }
+      const exists = await Estimate.exists({ _id: id });
+      if (!exists) return res.status(404).json({ error: 'Estimate not found' });
+      await Estimate.updateOne({ _id: id, quoteStatus: null }, { $set: { quoteStatus } });
+      return res.json({ success: true, estimateId: id });
+    }
 
     if (!id || !estimate) {
       return res.status(400).json({
