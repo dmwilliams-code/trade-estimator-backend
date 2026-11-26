@@ -8,7 +8,7 @@
 const mongoose = require('mongoose');
 
 const demandStatSchema = new mongoose.Schema({
-  windowType: { type: String, enum: ['trailing-6m', 'month', 'quarter'], required: true },
+  windowType: { type: String, enum: ['cumulative', 'trailing-6m', 'month', 'quarter'] /* trailing-6m: retired 26 Nov 2026, kept for old records */, required: true },
   windowStart: { type: Date, required: true },
   windowEnd: { type: Date, required: true },
   windowLabel: { type: String, required: true },

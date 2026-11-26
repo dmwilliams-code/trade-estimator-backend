@@ -120,8 +120,11 @@ run('windows: months from July, quarters from Q3, months lock 7 days after end',
   const months = wins.filter((w) => w.windowType === 'month').map((w) => w.windowLabel);
   assert.deepStrictEqual(months, ['July 2026', 'August 2026', 'September 2026', 'October 2026']);
   assert.deepStrictEqual(wins.filter((w) => w.windowType === 'quarter').map((w) => w.windowLabel), ['Q3 2026']);
-  const trailing = wins.find((w) => w.windowType === 'trailing-6m');
-  assert.strictEqual(trailing.windowStart.toISOString().slice(0, 10), RULES.dateFloor);
+  const cumulative = wins.find((w) => w.windowType === 'cumulative');
+  assert.strictEqual(cumulative.windowStart.toISOString().slice(0, 10), RULES.dateFloor);
+  assert.strictEqual(wins.filter((w) => w.windowType === 'cumulative').length, 1);
+  const later = windowsFor(new Date('2027-05-01T10:00:00Z')).find((w) => w.windowType === 'cumulative');
+  assert.strictEqual(later.windowStart.toISOString().slice(0, 10), RULES.dateFloor, 'cumulative never drops early months');
   const snaps = buildWindowSnapshots(rows(25), OCTOBER, { now: NOW, regionNames: REGIONS });
   assert.strictEqual(snaps[0].locked, true);
   const early = buildWindowSnapshots(rows(25), OCTOBER, { now: new Date('2026-11-03T10:00:00Z'), regionNames: REGIONS });
@@ -140,4 +143,12 @@ run('family share is a share of all estimates, not just family jobs', () => {
   const data = [...rows(20), ...rows(20, { jobType: 'rewire', category: 'electrical', areaQuantity: null, projectSize: 'medium' })];
   const national = buildWindowSnapshots(data, OCTOBER, { now: NOW, regionNames: REGIONS }).find((s) => s.scope === 'national');
   assert.deepStrictEqual(national.metrics.familyShare.map((r) => [r.label, r.share]), [['Extensions', 50], ['Other jobs', 50]]);
+});
+
+run('room size mix only for jobs priced by the room, not rewires', () => {
+  const data = [...rows(25, { jobType: 'rewire', category: 'electrical', areaQuantity: null, projectSize: 'medium' }),
+    ...rows(25, { jobType: 'bathroom-install', category: 'plumbing', areaQuantity: null, projectSize: 'small' })];
+  const snaps = buildWindowSnapshots(data, OCTOBER, { now: NOW, regionNames: REGIONS });
+  assert.strictEqual(snaps.find((s) => s.key === 'rewire').metrics.size, null);
+  assert.strictEqual(snaps.find((s) => s.key === 'bathroom-install').metrics.size.kind, 'projectSize');
 });

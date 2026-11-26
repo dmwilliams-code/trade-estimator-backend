@@ -12,6 +12,7 @@ const {
   JOB_LABELS,
   FAMILIES,
   AREA_SIZES,
+  PROJECT_SIZE_JOBS,
   PROJECT_SIZE_LABELS,
   QUALITY_LABELS,
   CATEGORY_LABELS,
@@ -39,19 +40,20 @@ function isLocked(windowEnd, now, rules = RULES) {
 }
 
 // Completed calendar months and quarters that start on or after the floor,
-// plus the rolling 6 month window ending now.
+// plus the cumulative window from the floor to now.
 function windowsFor(now, rules = RULES) {
   const floor = new Date(`${rules.dateFloor}T00:00:00Z`);
   const windows = [];
 
-  const sixAgo = utcMonthStart(now.getUTCFullYear(), now.getUTCMonth() - 6);
-  sixAgo.setUTCDate(Math.min(now.getUTCDate(), 28));
-  const trailingStart = sixAgo < floor ? floor : sixAgo;
+  // Everything since the floor, growing each week. Volume is too low for a
+  // rolling window: it would shed the busy summer months and push smaller
+  // jobs below the threshold. Revisit as a rolling 12 months once a full
+  // year of data exists (June 2027).
   windows.push({
-    windowType: 'trailing-6m',
-    windowStart: trailingStart,
+    windowType: 'cumulative',
+    windowStart: floor,
     windowEnd: now,
-    windowLabel: `${dayLabel(trailingStart)} to ${dayLabel(new Date(now.getTime() - 1))}`,
+    windowLabel: `${dayLabel(floor)} to ${dayLabel(new Date(now.getTime() - 1))}`,
     complete: false
   });
 
@@ -203,7 +205,7 @@ function scopeMetrics(rows, { scope, key, windowType, regionNames, rules }) {
   const metrics = {
     qualityMix: shareTable(countBy(rows, (r) => (QUALITY_LABELS[r.quality] ? r.quality : null)), (k) => QUALITY_LABELS[k], { minCell: rules.minCell }),
     ...regionMetric(rows, regionNames, rules),
-    monthlyShare: windowType === 'trailing-6m' ? monthlyMetric(rows) : null,
+    monthlyShare: windowType === 'cumulative' ? monthlyMetric(rows) : null,
     quoteStatusMix: quoteMetric(rows, rules)
   };
   if (scope === 'national') {
@@ -216,7 +218,9 @@ function scopeMetrics(rows, { scope, key, windowType, regionNames, rules }) {
     );
     metrics.categoryShare = shareTable(countBy(rows, (r) => (CATEGORY_LABELS[r.category] ? r.category : null)), (k) => CATEGORY_LABELS[k], { minCell: rules.minCell });
   } else if (scope === 'job') {
-    metrics.size = AREA_SIZES[key] ? areaSizeMetric(rows, key, rules) : projectSizeMetric(rows, rules);
+    if (AREA_SIZES[key]) metrics.size = areaSizeMetric(rows, key, rules);
+    else if (PROJECT_SIZE_JOBS.includes(key)) metrics.size = projectSizeMetric(rows, rules);
+    else metrics.size = null;
   } else if (scope === 'family') {
     metrics.jobShare = shareTable(countBy(rows, (r) => r.jobType), (k) => JOB_LABELS[k], { minCell: rules.minCell });
   }
@@ -238,7 +242,7 @@ function topRow(table) {
 function buildCaption(snapshot) {
   if (snapshot.suppressed) return null;
   const m = snapshot.metrics;
-  const when = snapshot.windowType === 'trailing-6m' ? 'over the last six months' : `in ${snapshot.windowLabel}`;
+  const when = snapshot.windowType === 'cumulative' ? `since ${dayLabel(snapshot.windowStart)}` : `in ${snapshot.windowLabel}`;
 
   if (snapshot.scope === 'national') {
     const job = topRow(m.jobShare);

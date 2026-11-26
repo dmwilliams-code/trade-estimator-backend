@@ -20,6 +20,7 @@
 
 require('dotenv').config();
 const fs = require('fs');
+const https = require('https');
 const mongoose = require('mongoose');
 const Estimate = require('../models/Estimate');
 const DemandStat = require('../models/DemandStat');
@@ -43,6 +44,21 @@ const ONLY_WINDOW = option('window');
 const OUT = option('out');
 const APPROVE = option('approve');
 
+// Vercel deploy hook (ArticleDataBlocksSpec.md 3.2): article data blocks are
+// built into the frontend, so a new cumulative build triggers a redeploy.
+function triggerFrontendDeploy(url) {
+  return new Promise((resolve, reject) => {
+    const req = https.request(url, { method: 'POST', timeout: 15000 }, (res) => {
+      res.resume();
+      if (res.statusCode >= 200 && res.statusCode < 300) resolve(res.statusCode);
+      else reject(new Error(`HTTP ${res.statusCode}`));
+    });
+    req.on('timeout', () => req.destroy(new Error('timeout')));
+    req.on('error', reject);
+    req.end();
+  });
+}
+
 const alertOps = createOpsAlerter({ send: sendOpsEmail, recipient: () => process.env.ALERT_EMAIL });
 const regionNames = Object.fromEntries(regionalCostData.regions.map((r) => [r.slug, r.name]));
 const rules = { ...RULES, excluded: TEST_DISTRICTS };
@@ -57,7 +73,7 @@ function populationMatch(from, to) {
 
 async function previousNationalN(win) {
   const query = { scope: 'national', status: 'published', windowType: win.windowType };
-  if (win.windowType !== 'trailing-6m') query.windowStart = { $lt: win.windowStart };
+  if (win.windowType !== 'cumulative') query.windowStart = { $lt: win.windowStart };
   const prev = await DemandStat.findOne(query).sort({ windowStart: -1, builtAt: -1 }).lean();
   return prev ? prev.n : null;
 }
@@ -65,7 +81,7 @@ async function previousNationalN(win) {
 async function approve(spec) {
   const [windowType, ym] = spec.split(':');
   // ym is the window's first month, e.g. 2026-11 (a quarter uses its first month, e.g. 2026-10).
-  if (!/^(month|quarter|trailing-6m)$/.test(windowType || '') || !/^\d{4}-\d{2}$/.test(ym || '')) {
+  if (!/^(month|quarter)$/.test(windowType || '') || !/^\d{4}-\d{2}$/.test(ym || '')) {
     throw new Error('Use --approve=<month|quarter>:<YYYY-MM>');
   }
   const windowStart = new Date(`${ym}-01T00:00:00Z`);
@@ -171,6 +187,23 @@ async function main() {
         await alertOps(`demand-stats-review-${win.windowType}`, 'Demand stats held for review',
           `${win.windowType} ${win.windowLabel}: ${reviewReason}. Not served until approved with\n` +
           `node scripts/demand-stats-builder.js --approve=${win.windowType}:${win.windowStart.toISOString().slice(0, 7)}`);
+      }
+    }
+  }
+
+  const cumulativePublished = output.some((s) => s.windowType === 'cumulative' && s.status === 'published');
+  if (!DRY_RUN && cumulativePublished) {
+    const hook = process.env.VERCEL_DEPLOY_HOOK_URL;
+    if (!hook) {
+      console.log('\nVERCEL_DEPLOY_HOOK_URL not set, frontend not redeployed.');
+    } else {
+      try {
+        const code = await triggerFrontendDeploy(hook);
+        console.log(`\nFrontend redeploy triggered (HTTP ${code}).`);
+      } catch (err) {
+        console.error(`\nFrontend redeploy failed: ${err.message}`);
+        await alertOps('demand-stats-deploy-hook', 'Demand stats: frontend redeploy failed',
+          `The Vercel deploy hook returned an error (${err.message}). Article data blocks keep last week's figures until the next deploy.`);
       }
     }
   }

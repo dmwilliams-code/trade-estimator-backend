@@ -56,6 +56,10 @@ const AREA_SIZES = {
   'garden-landscaping': { plausible: [2, 500], bands: [0, 20, 30, 50, 100] }
 };
 
+// The estimator's size buttons are room sizes ("Single room", "Standard room"),
+// so a size mix only means something for jobs priced by the room.
+const PROJECT_SIZE_JOBS = ['plastering-room', 'painting-room', 'wallpapering', 'bathroom-install', 'kitchen-renovation'];
+
 const PROJECT_SIZE_LABELS = { small: 'Small', medium: 'Medium', large: 'Large', 'extra-large': 'Extra large' };
 const QUALITY_LABELS = { budget: 'Budget', standard: 'Standard', premium: 'Premium', luxury: 'Luxury' };
 const CATEGORY_LABELS = { building: 'Building', plumbing: 'Plumbing', electrical: 'Electrical', decoration: 'Decoration', outdoor: 'Outdoor' };
@@ -66,6 +70,7 @@ module.exports = {
   JOB_LABELS,
   FAMILIES,
   AREA_SIZES,
+  PROJECT_SIZE_JOBS,
   PROJECT_SIZE_LABELS,
   QUALITY_LABELS,
   CATEGORY_LABELS,

@@ -4,8 +4,8 @@
  *
  * Mounted in server.js at /api/demand-stats:
  *   GET /latest?window=month&scope=national
- *   GET /latest?window=trailing-6m&scope=job&key=single-storey-extension
- *   GET /bundle?window=trailing-6m   every scope from the latest build, in one response
+ *   GET /latest?window=cumulative&scope=job&key=single-storey-extension
+ *   GET /bundle?window=cumulative    every scope from the latest build, in one response
  *   GET /history?window=month        locked months, newest first (labels, captions, top jobs)
  *
  * Sample sizes and cell counts stay internal: n, count and sampleCount are
@@ -17,7 +17,7 @@ const DemandStat = require('../models/DemandStat');
 
 const router = express.Router();
 
-const WINDOWS = ['trailing-6m', 'month', 'quarter'];
+const WINDOWS = ['cumulative', 'month', 'quarter'];
 const SCOPES = ['national', 'job', 'family'];
 const INTERNAL_KEYS = new Set(['n', 'count', 'sampleCount', '_id', '__v', 'status', 'reviewReason']);
 
@@ -63,7 +63,7 @@ router.get('/latest', async (req, res) => {
 });
 
 router.get('/bundle', async (req, res) => {
-  const windowType = pick(req.query.window, WINDOWS, 'trailing-6m');
+  const windowType = pick(req.query.window, WINDOWS, 'cumulative');
   try {
     const anchor = await DemandStat.findOne({ windowType, scope: 'national', status: 'published' })
       .sort({ windowStart: -1, builtAt: -1 })
