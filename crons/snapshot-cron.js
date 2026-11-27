@@ -153,6 +153,9 @@ async function main() {
   console.log(`Snapshot written for week ending ${fmtDate(weekEnding)}`);
   if (snapshot.meta.partialFailure) {
     console.warn('Partial failure this run:', JSON.stringify(snapshot.meta.partialFailure));
+    // A missing Google credential only shows up here, so it gets an email too.
+    await alertOps('snapshot-cron-partial', 'EstimateAI weekly snapshot incomplete',
+      `The snapshot was written but some sources failed:\n\n${snapshot.meta.partialFailure.map((f) => `${f.source}: ${f.reason}`).join('\n')}`);
   }
 
   await mongoose.disconnect();
