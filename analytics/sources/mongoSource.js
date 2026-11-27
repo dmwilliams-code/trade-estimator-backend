@@ -180,9 +180,27 @@ async function getChangeLog({ since }) {
   ]);
 }
 
+// Weekly KPI section (analytics/kpis.js): estimates per UTC day, variant
+// first (rule 4.1.1), then job type. Test districts excluded.
+async function getEstimateDailyCounts({ from, to }) {
+  const rows = await Estimate.aggregate([
+    { $match: { ...dateRangeMatch('createdAt', from, to), ...estimateTestExclusion() } },
+    { $group: {
+        _id: {
+          variant: { $ifNull: ['$abVariant', 'unassigned'] },
+          date: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          jobType: '$jobType'
+        },
+        count: { $sum: 1 }
+    } }
+  ]);
+  return rows.map((r) => ({ variant: r._id.variant, date: r._id.date, jobType: r._id.jobType, count: r.count }));
+}
+
 module.exports = {
   TEST_DISTRICTS,
   estimateTestExclusion,
+  getEstimateDailyCounts,
   getEstimatesByVariant,
   getLeadsByVariant,
   getContractorSignalLadder,

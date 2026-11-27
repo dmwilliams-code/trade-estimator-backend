@@ -98,4 +98,51 @@ async function getGa4Events({ from, to, eventNames, breakdown }) {
   return { rows, cachedAt };
 }
 
-module.exports = { getGa4Events };
+// getGa4LandingRows({ from, to }) -> { rows, cachedAt }
+// Weekly KPI section (analytics/kpis.js): sessions and estimate_generated
+// events per date, landing page and channel group, Singapore excluded.
+// rows: [{ date: 'YYYY-MM-DD', landingPage, channel, sessions, estimates }]
+async function queryGa4LandingRows({ from, to }) {
+  const client = createGA4Client();
+  const dimensions = [{ name: 'date' }, { name: 'landingPage' }, { name: 'sessionDefaultChannelGroup' }];
+  const run = (metric, extraFilter) => client.runReport({
+    property: `properties/${PROPERTY_ID}`,
+    dateRanges: [{ startDate: from, endDate: to }],
+    dimensions,
+    metrics: [{ name: metric }],
+    dimensionFilter: extraFilter
+      ? { andGroup: { expressions: [{ notExpression: EXCLUDE_SINGAPORE }, extraFilter] } }
+      : { notExpression: EXCLUDE_SINGAPORE },
+    limit: 100000,
+  });
+  const [[sessionsRes], [eventsRes]] = await Promise.all([
+    run('sessions'),
+    run('eventCount', { filter: { fieldName: 'eventName', stringFilter: { matchType: 'EXACT', value: 'estimate_generated' } } }),
+  ]);
+
+  const byKey = new Map();
+  const entry = (r) => {
+    const values = r.dimensionValues.map((v) => v.value);
+    const k = values.join('|');
+    if (!byKey.has(k)) {
+      const [d, landingPage, channel] = values;
+      byKey.set(k, { date: `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}`, landingPage, channel, sessions: 0, estimates: 0 });
+    }
+    return byKey.get(k);
+  };
+  (sessionsRes.rows || []).forEach((r) => { entry(r).sessions += parseInt(r.metricValues[0].value, 10); });
+  (eventsRes.rows || []).forEach((r) => { entry(r).estimates += parseInt(r.metricValues[0].value, 10); });
+  return [...byKey.values()];
+}
+
+async function getGa4LandingRows({ from, to }) {
+  const { data: rows, cachedAt } = await withCache(
+    'ga4_landing_rows',
+    { from, to },
+    CACHE_TTL_SECONDS,
+    () => queryGa4LandingRows({ from, to })
+  );
+  return { rows, cachedAt };
+}
+
+module.exports = { getGa4Events, getGa4LandingRows };

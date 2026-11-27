@@ -20,6 +20,38 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const SiteSnapshot = require('../models/SiteSnapshot');
 const { buildSnapshot } = require('../analytics/analyticsSnapshot');
+const { createOpsAlerter } = require('../utils/opsAlert');
+const { sendOpsEmail } = require('../services/emailService');
+
+// One email to ALERT_EMAIL when the run fails, so this cron cannot stop
+// silently again (it never ran between July and November 2026).
+const alertOps = createOpsAlerter({ send: sendOpsEmail, recipient: () => process.env.ALERT_EMAIL });
+
+const num = (n) => (n === null || n === undefined ? 'n/a' : Number(n).toLocaleString('en-GB'));
+
+function kpiLines(kpis) {
+  const lines = ['## KPIs (latest complete week)'];
+  if (!kpis) return [...lines, '_unavailable_', ''];
+  const row = (label, s) => `| ${label} | ${num(s.current)} | ${num(s.previous)} | ${num(s.avg4)} | ${s.flag ? `${s.flag.direction} ${s.flag.changePct}%` : ''} |`;
+  lines.push('| KPI | This week | Last week | 4-week avg | Flag |', '|---|---|---|---|---|');
+  if (kpis.gsc) {
+    lines.push(row(`Impressions (${kpis.gsc.weeks[0].from} to ${kpis.gsc.weeks[0].to})`, kpis.gsc.impressions));
+    lines.push(row('Clicks', kpis.gsc.clicks));
+  }
+  if (kpis.ga4) {
+    lines.push(row(`Organic sessions (${kpis.ga4.weeks[0].from} to ${kpis.ga4.weeks[0].to})`, kpis.ga4.sessionsOrganic));
+    lines.push(row('All sessions', kpis.ga4.sessionsAll));
+  }
+  kpis.mongodb.estimatesByVariant.forEach((v) => lines.push(row(`Estimates, ${v.variant} (${kpis.mongodb.weeks[0].from} to ${kpis.mongodb.weeks[0].to})`, v)));
+  lines.push('');
+  if (kpis.ga4) {
+    lines.push('| Organic landers | Sessions | Estimates | Rate | Last week | 4-week | Flag |', '|---|---|---|---|---|---|---|');
+    kpis.ga4.organicEstimateRateByLanding.forEach((r) => lines.push(`| ${r.group} | ${r.sessions} | ${r.estimates} | ${num(r.ratePct)}% | ${num(r.previousRatePct)}% | ${num(r.avg4RatePct)}% | ${r.flag ? `${r.flag.direction} ${r.flag.changePct}%` : ''} |`));
+    lines.push('');
+  }
+  if (kpis.partialFailure) lines.push(`**KPI partial failure:** ${kpis.partialFailure.map((f) => `${f.source} (${f.reason})`).join('; ')}`, '');
+  return lines;
+}
 
 function fmtCurrency(value) {
   if (value === null || value === undefined) return 'n/a';
@@ -42,6 +74,8 @@ function renderMarkdown(snapshot) {
     lines.push(`**Partial failure:** ${meta.partialFailure.map((f) => `${f.source} (${f.reason})`).join('; ')}`);
     lines.push('');
   }
+
+  lines.push(...kpiLines(data.kpis));
 
   lines.push('## A/B test funnel');
   lines.push(`Verdict: **${data.abTestStatus.verdict.verdict}** -- ${data.abTestStatus.verdict.reason}`);
@@ -124,7 +158,8 @@ async function main() {
   await mongoose.disconnect();
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error('snapshot-cron failed:', err);
+  await alertOps('snapshot-cron', 'EstimateAI weekly snapshot failed', `crons/snapshot-cron.js failed and wrote no snapshot.\n\n${err && err.message}`);
   process.exit(1);
 });

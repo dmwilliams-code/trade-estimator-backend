@@ -11,7 +11,8 @@ const DIMENSION_MAP = {
   query: 'query',
   page: 'page',
   country: 'country',
-  device: 'device'
+  device: 'device',
+  date: 'date'
 };
 
 function createGSCClient() {
@@ -98,4 +99,20 @@ async function getGscPerformance({ from, to, dimension, limit }) {
   return { rows, cachedAt };
 }
 
-module.exports = { getGscPerformance };
+// getGscKpiRows({ from, to, dimension }) -> { rows, cachedAt }
+// Weekly KPI section (analytics/kpis.js): one row per date or per page, no
+// delta, high row limit so page groups are summed from every page with data.
+async function getGscKpiRows({ from, to, dimension }) {
+  if (!['date', 'page'].includes(dimension)) {
+    throw new Error(`gscSource: getGscKpiRows dimension must be date or page, got "${dimension}"`);
+  }
+  const { data: rows, cachedAt } = await withCache(
+    'gsc_kpi_rows',
+    { from, to, dimension },
+    CACHE_TTL_SECONDS,
+    () => queryGscRows({ dimension, from, to, limit: 5000 })
+  );
+  return { rows, cachedAt };
+}
+
+module.exports = { getGscPerformance, getGscKpiRows };

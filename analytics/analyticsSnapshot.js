@@ -11,6 +11,7 @@ const { resolveWindow, TEST_START_DATE } = require('./resolveWindow');
 const { computeVerdict } = require('./verdict');
 const caveats = require('./caveats');
 const { serialise } = require('./serialise');
+const { buildKpis } = require('./kpis');
 
 const VARIANT_ARMS = ['blur', 'control', 'open_jul2026', 'unassigned'];
 
@@ -279,6 +280,11 @@ async function buildSnapshot({ period }) {
     partialFailure.push({ source: 'ga4', reason: err.message });
   }
 
+  // Weekly KPIs (impressions, clicks, estimates) with their own week windows.
+  // GSC/GA4 failures inside are reported in kpis.partialFailure.
+  const kpis = await buildKpis();
+  (kpis.partialFailure || []).forEach((f) => partialFailure.push({ source: `kpis:${f.source}`, reason: f.reason }));
+
   const windows = { mongodb: abStatus.meta.windows.mongodb };
   const cachedAt = {};
   const caveatSet = new Set([
@@ -309,6 +315,7 @@ async function buildSnapshot({ period }) {
       ...(partialFailure.length ? { partialFailure } : {}),
     },
     data: {
+      kpis,
       abTestStatus: abStatus.data,
       estimateDemand: demand.data,
       contractorSignals: signals.data,
@@ -321,6 +328,7 @@ async function buildSnapshot({ period }) {
 
 module.exports = {
   buildSnapshot,
+  buildKpis,
   getAbTestStatus,
   getGscPerformance,
   getGa4Events,

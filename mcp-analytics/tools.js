@@ -23,6 +23,26 @@ function toErrorResult(toolName, err) {
 
 function registerTools(server) {
   server.registerTool(
+    'get_kpi_summary',
+    {
+      description:
+        'Weekly KPIs: GSC impressions, clicks, CTR and position (total and by page group), GA4 sessions and ' +
+        'organic estimate rate per landing session by page group, and MongoDB estimates by variant and job group. ' +
+        'Each is the latest complete week vs the previous week and the 4-week average, with anomaly flags ' +
+        'computed in code. Use this first for any question about how traffic or estimates moved this week, and ' +
+        'quote its numbers exactly. Each source block states its own week dates.',
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        return toToolResult(await analyticsSnapshot.buildKpis());
+      } catch (err) {
+        return toErrorResult('get_kpi_summary', err);
+      }
+    }
+  );
+
+  server.registerTool(
     'get_site_snapshot',
     {
       description:
