@@ -999,6 +999,10 @@ app.use('/api/leads', leadsRouter);
 const contractorRegistrationsRouter = require('./routes/contractorRegistrationsRoutes');
 app.use('/api/contractor-registrations', contractorRegistrationsRouter);
 
+// Cleanup for the daily synthetic estimate check (recent BA14 records only)
+const { createSyntheticRouter } = require('./routes/syntheticRoutes');
+app.use('/api/synthetic', createSyntheticRouter({ Estimate }));
+
 const Job = require('./models/Job');
 
 // Job Feed teaser aggregate - counts of open jobs by region over the last 30 days.
