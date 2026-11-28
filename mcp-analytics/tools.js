@@ -4,6 +4,7 @@
 
 const { z } = require('zod/v4');
 const analyticsSnapshot = require('../analytics/analyticsSnapshot');
+const { buildOpportunities } = require('../analytics/opportunities');
 
 function toToolResult(payload) {
   return { content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }] };
@@ -38,6 +39,26 @@ function registerTools(server) {
         return toToolResult(await analyticsSnapshot.buildKpis());
       } catch (err) {
         return toErrorResult('get_kpi_summary', err);
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_search_opportunities',
+    {
+      description:
+        'Monthly search opportunity scan over the last 28 days of UK Search Console data: striking-distance ' +
+        'queries (position 8 to 20), pages with a CTR gap against the site\'s own CTR curve, unserved queries ' +
+        '(best page is the homepage, a hub or a different job) and cannibalised queries. Each item is sized by ' +
+        'expected extra clicks and estimates, computed in code. Quote the figures exactly; they order the list ' +
+        'and are not forecasts. Drop pages under a running test before presenting.',
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        return toToolResult(await buildOpportunities());
+      } catch (err) {
+        return toErrorResult('get_search_opportunities', err);
       }
     }
   );

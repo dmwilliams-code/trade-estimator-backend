@@ -115,4 +115,41 @@ async function getGscKpiRows({ from, to, dimension }) {
   return { rows, cachedAt };
 }
 
-module.exports = { getGscPerformance, getGscKpiRows };
+// getGscQueryPageRows({ from, to, country }) -> { rows, cachedAt }
+// Monthly opportunity scan (analytics/opportunities.js): one row per query and
+// page, optionally limited to one country (ISO 3166-1 alpha-3, e.g. 'gbr').
+// rows: [{ query, page, clicks, impressions, ctr, position }]
+async function queryGscQueryPageRows({ from, to, country }) {
+  const gsc = createGSCClient();
+  const requestBody = {
+    startDate: from,
+    endDate: to,
+    dimensions: ['query', 'page'],
+    rowLimit: 25000,
+    dataState: 'final',
+  };
+  if (country) {
+    requestBody.dimensionFilterGroups = [{ filters: [{ dimension: 'country', operator: 'equals', expression: country }] }];
+  }
+  const response = await gsc.searchanalytics.query({ siteUrl: SITE_URL, requestBody });
+  return (response.data.rows || []).map((row) => ({
+    query: row.keys[0],
+    page: row.keys[1],
+    clicks: row.clicks,
+    impressions: row.impressions,
+    ctr: row.ctr,
+    position: row.position,
+  }));
+}
+
+async function getGscQueryPageRows({ from, to, country }) {
+  const { data: rows, cachedAt } = await withCache(
+    'gsc_query_page_rows',
+    { from, to, country: country || null },
+    CACHE_TTL_SECONDS,
+    () => queryGscQueryPageRows({ from, to, country })
+  );
+  return { rows, cachedAt };
+}
+
+module.exports = { getGscPerformance, getGscKpiRows, getGscQueryPageRows };

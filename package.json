@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test test/reliability.test.js test/synthetic.test.js test/kpis.test.js",
+    "test": "node --test test/reliability.test.js test/synthetic.test.js test/kpis.test.js test/opportunities.test.js",
     "generate-sitemap": "node scripts/generateSitemap.js"
   },
   "dependencies": {
