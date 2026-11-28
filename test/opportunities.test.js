@@ -112,3 +112,38 @@ test('buildLists drops branded queries and sorts by expected estimates', () => {
   assert.ok(!out.strikingDistance.some((r) => /estimateai/.test(r.query)));
   assert.deepStrictEqual(out.strikingDistance.map((r) => r.query), ['article cost', 'trade cost']);
 });
+
+test('query items carry their class and generic price ranks at 0.2x', () => {
+  const local = o.withClass({ query: 'home renovation birmingham', expectedExtraEstimates: 1 });
+  const generic = o.withClass({ query: 'plastering cost per m2', expectedExtraEstimates: 3 });
+  assert.strictEqual(local.queryClass, 'local');
+  assert.strictEqual(local.rankScore, 1);
+  assert.strictEqual(generic.queryClass, 'generic-price');
+  assert.strictEqual(generic.label, 'likely AI Overview');
+  assert.strictEqual(generic.rankScore, 0.6);
+});
+
+test('hidden citations group by page, compare windows and catch graduated queries', () => {
+  const prev = [
+    row('plastering cost per m2', '/articles/plastering-cost-uk-2026', 4.4, 300, 0),
+    row('plastering rates per m2 uk', '/articles/plastering-cost-uk-2026', 4.1, 200, 0),
+    row('cost to rewire a house', '/articles/house-rewire-cost-uk-2026', 5, 150, 0),
+  ];
+  const now = [
+    row('plastering cost per m2', '/articles/plastering-cost-uk-2026', 4.2, 400, 0), // still hidden
+    row('plastering rates per m2 uk', '/articles/plastering-cost-uk-2026', 3.5, 200, 4), // 2% CTR: graduated
+    row('cost to rewire a house', '/articles/house-rewire-cost-uk-2026', 9, 150, 3), // moved 4 places: not graduated
+    row('too few', '/articles/x', 3, 50, 0),
+  ];
+  const list = o.hiddenCitations(now, prev);
+  const pl = list.find((p) => p.page === '/articles/plastering-cost-uk-2026');
+  assert.strictEqual(pl.hiddenQueries, 1);
+  assert.strictEqual(pl.impressions, 400);
+  assert.strictEqual(pl.previousHiddenQueries, 2);
+  assert.strictEqual(pl.previousImpressions, 500);
+  assert.deepStrictEqual(pl.graduated.map((g) => g.query), ['plastering rates per m2 uk']);
+  const rw = list.find((p) => p.page === '/articles/house-rewire-cost-uk-2026');
+  assert.strictEqual(rw.hiddenQueries, 0);
+  assert.deepStrictEqual(rw.graduated, []);
+  assert.ok(!list.some((p) => p.page === '/articles/x'));
+});

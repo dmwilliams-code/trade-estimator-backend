@@ -103,8 +103,8 @@ async function getGscPerformance({ from, to, dimension, limit }) {
 // Weekly KPI section (analytics/kpis.js): one row per date or per page, no
 // delta, high row limit so page groups are summed from every page with data.
 async function getGscKpiRows({ from, to, dimension }) {
-  if (!['date', 'page'].includes(dimension)) {
-    throw new Error(`gscSource: getGscKpiRows dimension must be date or page, got "${dimension}"`);
+  if (!['date', 'page', 'query'].includes(dimension)) {
+    throw new Error(`gscSource: getGscKpiRows dimension must be date, page or query, got "${dimension}"`);
   }
   const { data: rows, cachedAt } = await withCache(
     'gsc_kpi_rows',

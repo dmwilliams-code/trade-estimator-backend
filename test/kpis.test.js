@@ -124,3 +124,20 @@ test('collectFlags lists every flagged KPI', () => {
   });
   assert.deepStrictEqual(flags.map((f) => f.kpi), ['clicks', 'estimate rate, articles landers', 'estimates (open_jul2026)']);
 });
+
+test('buildQueryClasses sums clicks and impressions per class for two weeks', () => {
+  const cur = [
+    { key: 'home renovation birmingham', clicks: 2, impressions: 100 },
+    { key: 'plastering cost per m2', clicks: 0, impressions: 400 },
+    { key: 'renovation cost calculator uk', clicks: 1, impressions: 50 },
+  ];
+  const prev = [{ key: 'plastering cost per m2', clicks: 1, impressions: 300 }];
+  const out = k.buildQueryClasses(cur, prev);
+  const by = Object.fromEntries(out.map((r) => [r.queryClass, r]));
+  assert.deepStrictEqual(out.map((r) => r.queryClass), ['local', 'tool', 'own-data', 'generic-price', 'other']);
+  assert.strictEqual(by.local.clicks, 2);
+  assert.strictEqual(by.local.ctrPct, 2);
+  assert.strictEqual(by['generic-price'].impressions, 400);
+  assert.strictEqual(by['generic-price'].previousClicks, 1);
+  assert.strictEqual(by['own-data'].ctrPct, null);
+});

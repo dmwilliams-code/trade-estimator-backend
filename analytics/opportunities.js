@@ -10,6 +10,7 @@
 const gscSource = require('./sources/gscSource');
 const ga4Source = require('./sources/ga4Source');
 const { pageGroup } = require('./kpis');
+const { classifyQuery } = require('./queryClass');
 
 const COUNTRY = 'gbr';
 const WINDOW_DAYS = 28;
@@ -27,6 +28,9 @@ const RULES = {
   unserved: { minImpressions: 200, minPos: 15, maxPos: 40, targetPos: 5 },
   cannibal: { minImpressions: 100, minShare: 0.2 },
   curve: { minBucketImpressions: 200, maxPos: 40 },
+  // AIQueryStrategySpec.md (28 Nov 2026)
+  genericPriceWeight: 0.2,
+  hidden: { maxPos: 6, minImpressions: 100, maxCtr: 0.005, graduatedPosTolerance: 2 },
 };
 
 const BRANDED = /estimate\s*ai|getestimateai/i;
@@ -227,18 +231,100 @@ function cannibalisation(rows) {
   return out;
 }
 
-function buildLists({ rows, curveRows, ga4Rows }) {
+// ─── query classes and hidden citations (AIQueryStrategySpec.md) ─────────
+
+const AI_OVERVIEW_LABEL = 'likely AI Overview';
+
+// Tag query items with their class; generic price queries rank at 0.2x.
+function withClass(item) {
+  const queryClass = classifyQuery(item.query);
+  const weight = queryClass === 'generic-price' ? RULES.genericPriceWeight : 1;
+  return {
+    ...item,
+    queryClass,
+    ...(queryClass === 'generic-price' ? { label: AI_OVERVIEW_LABEL } : {}),
+    rankScore: r1((item.expectedExtraEstimates || 0) * weight),
+  };
+}
+
+// CTR gap items are pages: weight by the share of impressions from generic
+// price queries.
+function withClassMix(item, rows) {
+  const pageRows = rows.filter((r) => pathOf(r.page) === item.page);
+  const total = pageRows.reduce((a, r) => a + r.impressions, 0) || 1;
+  const generic = pageRows.filter((r) => classifyQuery(r.query) === 'generic-price').reduce((a, r) => a + r.impressions, 0);
+  const share = generic / total;
+  return {
+    ...item,
+    genericPriceSharePct: Math.round(share * 100),
+    ...(share >= 0.5 ? { label: AI_OVERVIEW_LABEL } : {}),
+    rankScore: r1((item.expectedExtraEstimates || 0) * (1 - (1 - RULES.genericPriceWeight) * share)),
+  };
+}
+
+const isHidden = (r) => r.position <= RULES.hidden.maxPos && r.impressions >= RULES.hidden.minImpressions && r.ctr < RULES.hidden.maxCtr;
+
+// Hidden citations by page, this window vs the previous 28 days, plus
+// queries that graduated (hidden before, now clicked at a similar position).
+function hiddenCitations(rows, prevRows) {
+  const key = (r) => `${r.query}\u0000${pathOf(r.page)}`;
+  const prevHidden = new Map(prevRows.filter(isHidden).map((r) => [key(r), r]));
+  const pages = new Map();
+  const page = (p) => {
+    if (!pages.has(p)) pages.set(p, { page: p, hiddenQueries: 0, impressions: 0, clicks: 0, previousHiddenQueries: 0, previousImpressions: 0, topQueries: [], graduated: [] });
+    return pages.get(p);
+  };
+  rows.filter(isHidden).forEach((r) => {
+    const p = page(pathOf(r.page));
+    p.hiddenQueries += 1;
+    p.impressions += r.impressions;
+    p.clicks += r.clicks;
+    p.topQueries.push({ query: r.query, impressions: r.impressions, position: r1(r.position), queryClass: classifyQuery(r.query) });
+  });
+  prevRows.filter(isHidden).forEach((r) => {
+    const p = page(pathOf(r.page));
+    p.previousHiddenQueries += 1;
+    p.previousImpressions += r.impressions;
+  });
+  rows.forEach((r) => {
+    const before = prevHidden.get(key(r));
+    if (!before || r.ctr < RULES.hidden.maxCtr) return;
+    if (Math.abs(r.position - before.position) > RULES.hidden.graduatedPosTolerance) return;
+    page(pathOf(r.page)).graduated.push({
+      query: r.query, ctrPct: pct(r.ctr), previousCtrPct: pct(before.ctr), position: r1(r.position), previousPosition: r1(before.position),
+    });
+  });
+  return [...pages.values()]
+    .map((p) => ({ ...p, topQueries: p.topQueries.sort((a, b) => b.impressions - a.impressions).slice(0, 5) }))
+    .sort((a, b) => b.impressions - a.impressions || b.previousImpressions - a.previousImpressions)
+    .slice(0, TOP_N);
+}
+
+const CITATION_ACTIONS = [
+  'add a named EstimateAI fact (own demand data or exact regional figures) near the top',
+  'keep the price table current and dates real',
+  'put the postcode estimator above the generic price table',
+  'no title changes for citation purposes',
+];
+
+function buildLists({ rows, curveRows, ga4Rows, prevRows = [] }) {
   const clean = rows.filter((r) => !BRANDED.test(r.query));
+  const prevClean = prevRows.filter((r) => !BRANDED.test(r.query));
   const curve = buildCtrCurve(curveRows.filter((r) => !BRANDED.test(r.query)));
   const rates = groupRates(ga4Rows);
-  const top = (list, key) => list.sort((a, b) => b[key] - a[key] || b.impressions - a.impressions).slice(0, TOP_N);
+  const top = (list) => list.sort((a, b) => b.rankScore - a.rankScore || b.impressions - a.impressions).slice(0, TOP_N);
   return {
     ctrCurvePct: Object.fromEntries([1, 2, 3, 5, 8, 10, 15, 20, 30].map((p) => [p, pct(curve[p])])),
     organicEstimateRatePct: Object.fromEntries(Object.entries(rates).map(([g, v]) => [g, pct(v)])),
-    strikingDistance: top(strikingDistance(clean, curve, rates), 'expectedExtraEstimates'),
-    ctrGap: top(ctrGap(clean, curve, rates), 'expectedExtraEstimates'),
-    unservedQueries: top(unservedQueries(clean, curve, rates), 'expectedExtraEstimates'),
-    cannibalisation: top(cannibalisation(clean), 'impressions'),
+    strikingDistance: top(strikingDistance(clean, curve, rates).map(withClass)),
+    ctrGap: top(ctrGap(clean, curve, rates).map((i) => withClassMix(i, clean))),
+    unservedQueries: top(unservedQueries(clean, curve, rates).map(withClass)),
+    cannibalisation: cannibalisation(clean)
+      .map((i) => ({ ...i, queryClass: classifyQuery(i.query) }))
+      .sort((a, b) => b.impressions - a.impressions)
+      .slice(0, TOP_N),
+    hiddenCitations: hiddenCitations(clean, prevClean),
+    citationActions: CITATION_ACTIONS,
   };
 }
 
@@ -255,21 +341,23 @@ async function buildOpportunities({ now = new Date() } = {}) {
   const window = { from: isoDaysAgo(GSC_LAG + WINDOW_DAYS - 1, now), to: gscTo };
   const curveWindow = { from: isoDaysAgo(GSC_LAG + CURVE_DAYS - 1, now), to: gscTo };
   const ga4Window = { from: isoDaysAgo(GA4_LAG + WINDOW_DAYS - 1, now), to: isoDaysAgo(GA4_LAG, now) };
+  const previousWindow = { from: isoDaysAgo(GSC_LAG + 2 * WINDOW_DAYS - 1, now), to: isoDaysAgo(GSC_LAG + WINDOW_DAYS, now) };
 
-  const [current, curve, ga4] = await Promise.all([
+  const [current, curve, ga4, previous] = await Promise.all([
     gscSource.getGscQueryPageRows({ ...window, country: COUNTRY }),
     gscSource.getGscQueryPageRows({ ...curveWindow, country: COUNTRY }),
     ga4Source.getGa4LandingRows(ga4Window),
+    gscSource.getGscQueryPageRows({ ...previousWindow, country: COUNTRY }),
   ]);
 
   return {
     generatedAt: new Date().toISOString(),
-    windows: { gsc: window, ctrCurve: curveWindow, ga4: ga4Window },
+    windows: { gsc: window, previousGsc: previousWindow, ctrCurve: curveWindow, ga4: ga4Window },
     country: 'United Kingdom',
-    note: 'Expected extra clicks and estimates are 28-day sizes for ordering the lists, using EstimateAI\'s own CTR curve and organic estimate rates. They are not forecasts. Branded queries are excluded. Drop pages under a running test or changed in the last 28 days before presenting.',
+    note: 'Expected extra clicks and estimates are 28-day sizes for ordering the lists, using EstimateAI\'s own CTR curve and organic estimate rates. They are not forecasts. Lists are ranked by rankScore, where generic price queries (likely answered by an AI Overview) count at 0.2x. Hidden citations are a proxy (position 6 or better, 100+ impressions, CTR under 0.5%): Search Console cannot show AI Overview citations directly. Branded queries are excluded. Drop pages under a running test or changed in the last 28 days before presenting.',
     rules: RULES,
     gscRows: current.rows.length,
-    ...buildLists({ rows: current.rows, curveRows: curve.rows, ga4Rows: ga4.rows }),
+    ...buildLists({ rows: current.rows, curveRows: curve.rows, ga4Rows: ga4.rows, prevRows: previous.rows }),
   };
 }
 
@@ -286,6 +374,8 @@ module.exports = {
   ctrGap,
   unservedQueries,
   cannibalisation,
+  hiddenCitations,
+  withClass,
   buildLists,
   RULES,
 };

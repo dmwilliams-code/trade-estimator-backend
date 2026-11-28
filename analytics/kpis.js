@@ -13,6 +13,7 @@ const gscSource = require('./sources/gscSource');
 const ga4Source = require('./sources/ga4Source');
 const mongoSource = require('./sources/mongoSource');
 const { CHART_GROUPS } = require('./demandStatsConfig');
+const { classifyQuery, CLASSES } = require('./queryClass');
 
 const WEEKS = 5; // latest week + 4 prior weeks for the average
 const LAG_DAYS = { gsc: 3, ga4: 1, mongodb: 1 };
@@ -230,6 +231,33 @@ function collectFlags({ gsc, ga4, mongo }) {
   return flags;
 }
 
+// Clicks and impressions by query class (AIQueryStrategySpec.md part 2).
+// Query-level rows leave out anonymised queries, so totals here are lower
+// than the site totals; compare classes and weeks, not against the site total.
+function buildQueryClasses(rowsCurrent, rowsPrevious) {
+  const sum = (rows) => {
+    const t = Object.fromEntries(CLASSES.map((c) => [c, { clicks: 0, impressions: 0 }]));
+    rows.forEach((r) => {
+      const c = classifyQuery(r.key);
+      t[c].clicks += r.clicks;
+      t[c].impressions += r.impressions;
+    });
+    return t;
+  };
+  const cur = sum(rowsCurrent);
+  const prev = sum(rowsPrevious);
+  const ctr = (x) => (x.impressions ? Math.round((x.clicks / x.impressions) * 10000) / 100 : null);
+  return CLASSES.map((c) => ({
+    queryClass: c,
+    clicks: cur[c].clicks,
+    previousClicks: prev[c].clicks,
+    impressions: cur[c].impressions,
+    previousImpressions: prev[c].impressions,
+    ctrPct: ctr(cur[c]),
+    previousCtrPct: ctr(prev[c]),
+  }));
+}
+
 // ─── live entry point ────────────────────────────────────────────────────
 
 function lastCompleteDay(source, now = new Date()) {
@@ -249,12 +277,15 @@ async function buildKpis({ now = new Date() } = {}) {
 
   let gsc = null;
   try {
-    const [dates, pagesCur, pagesPrev] = await Promise.all([
+    const [dates, pagesCur, pagesPrev, queriesCur, queriesPrev] = await Promise.all([
       gscSource.getGscKpiRows({ ...span(blocks.gsc), dimension: 'date' }),
       gscSource.getGscKpiRows({ ...blocks.gsc[0], dimension: 'page' }),
       gscSource.getGscKpiRows({ ...blocks.gsc[1], dimension: 'page' }),
+      gscSource.getGscKpiRows({ ...blocks.gsc[0], dimension: 'query' }),
+      gscSource.getGscKpiRows({ ...blocks.gsc[1], dimension: 'query' }),
     ]);
     gsc = buildGsc({ dateRows: dates.rows, pageRowsCurrent: pagesCur.rows, pageRowsPrevious: pagesPrev.rows, blocks: blocks.gsc });
+    gsc.byQueryClass = buildQueryClasses(queriesCur.rows, queriesPrev.rows);
   } catch (err) {
     console.error(`[${new Date().toISOString()}] buildKpis: gsc failed:`, err.message);
     partialFailure.push({ source: 'gsc', reason: err.message });
@@ -298,5 +329,6 @@ module.exports = {
   buildGa4,
   buildMongo,
   collectFlags,
+  buildQueryClasses,
   ANOMALY,
 };
